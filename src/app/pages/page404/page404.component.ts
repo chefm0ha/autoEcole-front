@@ -37,7 +37,7 @@ export class Page404Component {
   ) {}
 
   goHome(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/app/dashboard']);
   }
 
   goBack(): void {

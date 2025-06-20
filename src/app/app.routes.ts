@@ -17,6 +17,11 @@ export const routes: Routes = [
   },
   {
     path: '',
+    redirectTo: '/login', // Default redirect to login instead of dashboard
+    pathMatch: 'full'
+  },
+  {
+    path: 'app',
     component: DefaultLayoutComponent,
     canActivate: [authGuard], // Protect ALL routes - redirect to login if not authenticated
     children: [
@@ -57,6 +62,6 @@ export const routes: Routes = [
   },
   { 
     path: '**', 
-    redirectTo: 'login' // All unknown routes redirect to login
+    redirectTo: '/login' // All unknown routes redirect to login
   }
 ];

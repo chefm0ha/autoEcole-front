@@ -53,11 +53,9 @@
                     [valid]="false">
                     {{ getFieldError('password') }}
                   </c-form-feedback>
-                </c-input-group>
-
-                <!-- Login Button -->
+                </c-input-group>                <!-- Login Button -->
                 <c-row>
-                  <c-col [xs]="6">
+                  <c-col [xs]="12">
                     <button
                       cButton
                       color="primary"
@@ -75,23 +73,14 @@
                       <span *ngIf="loading">Connexion...</span>
                     </button>
                   </c-col>
-                  <c-col [xs]="6" class="text-end">
-                    <button
-                      cButton
-                      color="link"
-                      class="px-0"
-                      type="button"
-                    >
-                      Mot de passe oublié?
-                    </button>
-                  </c-col>
                 </c-row>
               </form>
-            </c-card-body>          </c-card>
+            </c-card-body>
+          </c-card>
           
           <!-- Right Side Info Card -->
-          <c-card cTextColor="white" class="bg-primary py-5" style="width: 44%">
-            <c-card-body class="text-center">
+          <c-card class="bg-primary py-5" style="width: 44%">
+            <c-card-body class="text-center text-white">
               <div>
                 <h2>Gestion Auto École</h2>
                 <p>

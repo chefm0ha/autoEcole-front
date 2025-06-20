@@ -74,7 +74,8 @@ export class LoginComponent {
         next: (response) => {
           this.loading = false;
           if (response.email && response.role) {
-            this.router.navigate(['/dashboard']);
+            // Navigate to app/dashboard after successful login
+            this.router.navigate(['/app/dashboard']);
           } else {
             this.error = response.message || 'Login failed';
           }

@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { map, take } from 'rxjs/operators';
-import { from, of } from 'rxjs';
+import { from } from 'rxjs';
 
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
@@ -34,10 +34,10 @@ export const loginGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // If already authenticated, redirect to dashboard immediately
+  // If already authenticated, redirect to app/dashboard immediately
   if (authService.isAuthenticated) {
-    console.log('Login Guard - User already authenticated, redirecting to dashboard');
-    router.navigate(['/dashboard']);
+    console.log('Login Guard - User already authenticated, redirecting to app/dashboard');
+    router.navigate(['/app/dashboard']);
     return false;
   }
 
@@ -47,8 +47,8 @@ export const loginGuard: CanActivateFn = () => {
     map(isAuthenticated => {
       console.log('Login Guard - isAuthenticated:', isAuthenticated);
       if (isAuthenticated) {
-        console.log('Login Guard - Redirecting to dashboard');
-        router.navigate(['/dashboard']);
+        console.log('Login Guard - Redirecting to app/dashboard');
+        router.navigate(['/app/dashboard']);
         return false;
       } else {
         return true;
