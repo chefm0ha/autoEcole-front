@@ -7,6 +7,7 @@ import { delay, filter, map, tap } from 'rxjs/operators';
 import { ColorModeService } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
 import { iconSubset } from './icons/icon-subset';
+import { AuthService } from './auth/auth.service';
 
 @Component({
     selector: 'app-root',
@@ -14,7 +15,7 @@ import { iconSubset } from './icons/icon-subset';
     imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
-  title = 'CoreUI Angular Admin Template';
+  title = 'Gestion Auto École';
 
   readonly #destroyRef: DestroyRef = inject(DestroyRef);
   readonly #activatedRoute: ActivatedRoute = inject(ActivatedRoute);
@@ -23,6 +24,7 @@ export class AppComponent implements OnInit {
 
   readonly #colorModeService = inject(ColorModeService);
   readonly #iconSetService = inject(IconSetService);
+  readonly #authService = inject(AuthService);
 
   constructor() {
     this.#titleService.setTitle(this.title);
@@ -30,10 +32,8 @@ export class AppComponent implements OnInit {
     this.#iconSetService.icons = { ...iconSubset };
     this.#colorModeService.localStorageItemName.set('autoecole-app-theme-default');
     this.#colorModeService.eventName.set('ColorSchemeChange');
-  }
-
-  ngOnInit(): void {
-
+  }  async ngOnInit(): Promise<void> {
+    // Handle navigation events for title updates
     this.#router.events.pipe(
         takeUntilDestroyed(this.#destroyRef)
       ).subscribe((evt) => {
@@ -42,6 +42,7 @@ export class AppComponent implements OnInit {
       }
     });
 
+    // Handle theme changes from query params
     this.#activatedRoute.queryParams
       .pipe(
         delay(1),

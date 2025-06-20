@@ -1,0 +1,67 @@
+<div class="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
+  <c-container>
+    <c-row class="justify-content-center">
+      <c-col [md]="8" [lg]="6">
+        <c-card class="mx-4 shadow-lg">
+          <c-card-body class="p-5 text-center">
+            
+            <!-- 404 Icon -->
+            <div class="error-icon mb-4">
+              <svg cIcon name="cilWarning" size="5xl" class="text-warning"></svg>
+            </div>
+
+            <!-- Error Code -->
+            <h1 class="display-1 fw-bold text-primary mb-3">404</h1>
+            
+            <!-- Error Message -->
+            <h2 class="h4 mb-3">Page introuvable</h2>
+            <p class="text-body-secondary mb-4">
+              Désolé, la page que vous recherchez n'existe pas ou a été déplacée.
+              Vérifiez l'URL ou retournez à l'accueil.
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+              <button 
+                cButton 
+                color="primary" 
+                class="px-4 me-md-2"
+                (click)="goHome()">
+                <svg cIcon name="cilHome" class="me-2"></svg>
+                Retour à l'accueil
+              </button>
+              
+              <button 
+                cButton 
+                color="outline-secondary" 
+                class="px-4"
+                (click)="goBack()">
+                <svg cIcon name="cilArrowLeft" class="me-2"></svg>
+                Page précédente
+              </button>
+            </div>
+
+            <!-- Additional Help -->
+            <div class="mt-5 pt-4 border-top">
+              <p class="text-body-secondary small mb-2">
+                Besoin d'aide? Contactez l'administrateur
+              </p>
+              <div class="d-flex justify-content-center gap-3">
+                <a href="mailto:admin@autoecole.com" class="text-decoration-none">
+                  <svg cIcon name="cilEnvelopeOpen" class="me-1"></svg>
+                  Email
+                </a>
+                <span class="text-body-secondary">|</span>
+                <a href="tel:+1234567890" class="text-decoration-none">
+                  <svg cIcon name="cilPhone" class="me-1"></svg>
+                  Téléphone
+                </a>
+              </div>
+            </div>
+
+          </c-card-body>
+        </c-card>
+      </c-col>
+    </c-row>
+  </c-container>
+</div>

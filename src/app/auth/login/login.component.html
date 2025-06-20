@@ -1,0 +1,109 @@
+<div class="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
+  <c-container>
+    <c-row class="justify-content-center">
+      <c-col [md]="8">
+        <c-card-group>
+          <c-card class="p-4">
+            <c-card-body>
+              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" cForm>
+                <h1>Connexion</h1>
+                <p class="text-body-secondary">Connectez-vous à votre compte</p>
+                
+                <!-- Error Alert -->
+                <div *ngIf="error" class="alert alert-danger" role="alert">
+                  <svg cIcon name="cilWarning" class="me-2"></svg>
+                  {{ error }}
+                </div>
+
+                <!-- Email Field -->
+                <c-input-group class="mb-3">
+                  <span cInputGroupText>
+                    <svg cIcon name="cilUser"></svg>
+                  </span>
+                  <input
+                    cFormControl
+                    formControlName="email"
+                    placeholder="Email"
+                    autocomplete="email"
+                    type="email"
+                    [class.is-invalid]="isFieldInvalid('email')"
+                  />
+                  <c-form-feedback 
+                    *ngIf="isFieldInvalid('email')" 
+                    [valid]="false">
+                    {{ getFieldError('email') }}
+                  </c-form-feedback>
+                </c-input-group>
+
+                <!-- Password Field -->
+                <c-input-group class="mb-4">
+                  <span cInputGroupText>
+                    <svg cIcon name="cilLockLocked"></svg>
+                  </span>
+                  <input
+                    cFormControl
+                    formControlName="password"
+                    placeholder="Mot de passe"
+                    autocomplete="current-password"
+                    type="password"
+                    [class.is-invalid]="isFieldInvalid('password')"
+                  />
+                  <c-form-feedback 
+                    *ngIf="isFieldInvalid('password')" 
+                    [valid]="false">
+                    {{ getFieldError('password') }}
+                  </c-form-feedback>
+                </c-input-group>
+
+                <!-- Login Button -->
+                <c-row>
+                  <c-col [xs]="6">
+                    <button
+                      cButton
+                      color="primary"
+                      class="px-4"
+                      type="submit"
+                      [disabled]="loading"
+                    >
+                      <c-spinner 
+                        *ngIf="loading" 
+                        aria-hidden="true" 
+                        size="sm" 
+                        class="me-2">
+                      </c-spinner>
+                      <span *ngIf="!loading">Connexion</span>
+                      <span *ngIf="loading">Connexion...</span>
+                    </button>
+                  </c-col>
+                  <c-col [xs]="6" class="text-end">
+                    <button
+                      cButton
+                      color="link"
+                      class="px-0"
+                      type="button"
+                    >
+                      Mot de passe oublié?
+                    </button>
+                  </c-col>
+                </c-row>
+              </form>
+            </c-card-body>          </c-card>
+          
+          <!-- Right Side Info Card -->
+          <c-card cTextColor="white" class="bg-primary py-5" style="width: 44%">
+            <c-card-body class="text-center">
+              <div>
+                <h2>Gestion Auto École</h2>
+                <p>
+                  Système de gestion complet pour votre auto-école. 
+                  Gérez vos candidats, moniteurs et véhicules en toute simplicité.
+                </p>
+                <svg cIcon name="cilSpeedometer" size="5xl" class="mt-4"></svg>
+              </div>
+            </c-card-body>
+          </c-card>
+        </c-card-group>
+      </c-col>
+    </c-row>
+  </c-container>
+</div>
