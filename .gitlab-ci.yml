@@ -1,0 +1,66 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  BUILD_ARGS: "--configuration production"
+  DIST_PATH: "dist/"
+  REMOTE_BASE_DIR: "/autoEcole2025/docker/frontend/master"
+
+angular_build_prod:
+  stage: build
+  image: node:20
+  script:
+    - npm ci
+    - npm install -g @angular/cli
+    - ng build $BUILD_ARGS
+  artifacts:
+    paths:
+      - $DIST_PATH
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+
+
+deploy_on_ubuntu_master:
+  stage: deploy
+  image: ubuntu
+  before_script:
+    - apt-get update && apt-get install -y openssh-client sshpass
+  script:
+    # Nettoyage du dossier upload sur le serveur
+    - sshpass -p "$SSH_PASSWORD" ssh -p 50022 -o StrictHostKeyChecking=no root@"$PUBLIC_IP" "rm -rf $REMOTE_BASE_DIR/upload && mkdir -p $REMOTE_BASE_DIR/upload"
+    # Copie des fichiers buildés (dist/) vers /upload sur le serveur
+    - sshpass -p "$SSH_PASSWORD" scp -P 50022 -r -o StrictHostKeyChecking=no $DIST_PATH/* root@"$PUBLIC_IP":$REMOTE_BASE_DIR/upload/
+    # Déplacement vers /app et relance du conteneur Docker
+    - sshpass -p "$SSH_PASSWORD" ssh -p 50022 -o StrictHostKeyChecking=no root@"$PUBLIC_IP" "
+        rm -rf $REMOTE_BASE_DIR/app/* &&
+        mv $REMOTE_BASE_DIR/upload/* $REMOTE_BASE_DIR/app/ &&
+        cd $REMOTE_BASE_DIR &&
+        docker-compose up -d --build"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+
+#angular_build_develop:
+#  extends: angular_build_prod
+#  variables:
+#    ARGS: ""
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "develop"'
+#      when: always
+
+#deploy_on_ubuntu_develop:
+#  stage: deploy
+#  image: ubuntu
+#  before_script:
+#    - apt-get update && apt-get install -y openssh-client
+#  script:
+#    - cat /builds/RCA1949/autoecole-gui.tmp/SSH_KEY
+#    - chmod 600 /builds/RCA1949/autoecole-gui.tmp/SSH_KEY
+#    - ssh -o StrictHostKeyChecking=no -i /builds/RCA1949/autoecole-gui.tmp/SSH_KEY root@212.227.212.233 'rm -rf /docker/frontend/develop/upload'
+#    - scp -r -o StrictHostKeyChecking=no -i /builds/RCA1949/autoecole-gui.tmp/SSH_KEY dist/businessGameGUI root@212.227.212.233:/docker/frontend/develop/upload
+#    - ssh -o StrictHostKeyChecking=no -i /builds/RCA1949/autoecole-gui.tmp/SSH_KEY root@212.227.212.233 'rm -rf /docker/frontend/develop/app/* && mv /docker/frontend/develop/upload/* /docker/frontend/develop/app/'
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "develop"'
+#      when: always
