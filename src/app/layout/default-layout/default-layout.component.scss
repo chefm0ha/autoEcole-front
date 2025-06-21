@@ -13,6 +13,19 @@
     min-height: 100%;
   }
 
+  // Neo Trucking logo styles
+  .sidebar-brand-full {
+    max-width: 140px;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .sidebar-brand-narrow {
+    max-width: 32px;
+    height: auto;
+    object-fit: contain;
+  }
+
   //.sidebar-nav {
   //  scrollbar-color: var(--cui-gray-500, #444) transparent;
   //}

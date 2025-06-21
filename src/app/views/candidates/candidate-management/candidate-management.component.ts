@@ -31,7 +31,7 @@ import {
   DropdownDividerDirective
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
-import { Candidate, CandidateSearchDTO, PageableResponse } from '../../../models/candidat.model';
+import { Candidate, CandidateListDTO, CandidateSearchDTO, PageableResponse } from '../../../models/candidat.model';
 import { CandidateService } from '../../../services/candidat.service';
 
 @Component({
@@ -75,8 +75,7 @@ import { CandidateService } from '../../../services/candidat.service';
 export class CandidateManagementComponent implements OnInit {
   @ViewChild('candidateModal') candidateModal!: TemplateRef<any>;
   @ViewChild('deleteModal') deleteModal!: TemplateRef<any>;
-
-  candidates: Candidate[] = [];
+  candidates: CandidateListDTO[] = [];
   candidateForm: FormGroup;
   searchForm: FormGroup;
   loading = false;
@@ -90,18 +89,66 @@ export class CandidateManagementComponent implements OnInit {
   pageSize = 10;
   totalPages = 0;
   totalElements = 0;
-  
-  // Sorting
-  sortBy = 'lastName';
-  sortDirection = 'asc';
+    // Sorting
+  sortBy = 'startingDate';
+  sortDirection = 'desc';
   
   // Modals
   showCandidateModal = false;
   showDeleteModal = false;
-  candidateToDelete: Candidate | null = null;
+  candidateToDelete: CandidateListDTO | null = null;
   
+  // Edit mode
+  isEditMode = false;
+  candidateToEdit: CandidateListDTO | null = null;
+
   // Filters
   showActiveOnly = false;
+
+  // Liste des villes marocaines
+  moroccanCities = [
+    'AGADIR',
+    'AL HOCEIMA',
+    'BENI MELLAL',
+    'BERKANE',
+    'BERRECHID',
+    'CASABLANCA',
+    'ELJADIDA',
+    'ERRACHIDIA',
+    'ESSAOUIRA',
+    'FES',
+    'INEZGANE',
+    'KENITRA',
+    'KHEMISSET',
+    'KHENIFRA',
+    'KHOURIBGA',
+    'LAAYOUNE',
+    'MARRAKECH',
+    'MEKNES',
+    'MOHAMMADIA',
+    'NADOR',
+    'OUJDA',
+    'OUARZAZATE',
+    'OUEZZANE',
+    'RABAT',
+    'SAFI',
+    'SALE',
+    'SEFROU',
+    'SETTAT',
+    'SIDI KACEM',
+    'TANGER',
+    'TAZA',
+    'TEMARA',
+    'TETOUAN',
+    'TIFLET'
+  ];
+  // Filtered cities for search
+  filteredCities: string[] = [];
+  showCityDropdown = false;
+  
+  // Filtered cities for search form
+  filteredSearchCities: string[] = [];
+  showSearchCityDropdown = false;
 
   constructor(
     private candidateService: CandidateService,
@@ -115,10 +162,9 @@ export class CandidateManagementComponent implements OnInit {
     this.searchForm.patchValue({ isActive: '' });
     this.loadCandidates();
   }
-
   createCandidateForm(): FormGroup {
     return this.fb.group({
-      cin: ['', [Validators.required, Validators.pattern(/^[A-Z]{1,2}\d{6,8}$/)]],
+      cin: ['', [Validators.required, Validators.pattern(/^([A-Z]\d{5,6}|[A-Z]{2}\d{6})$/)]],
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       address: [''],
@@ -164,10 +210,8 @@ export class CandidateManagementComponent implements OnInit {
       request = this.candidateService.getAllCandidates(
         this.currentPage, this.pageSize, this.sortBy, this.sortDirection
       );
-    }
-
-    request.subscribe({
-      next: (response: PageableResponse<Candidate>) => {
+    }    request.subscribe({
+      next: (response: PageableResponse<CandidateListDTO>) => {
         this.candidates = response.content;
         this.totalPages = response.totalPages;
         this.totalElements = response.totalElements;
@@ -238,24 +282,69 @@ export class CandidateManagementComponent implements OnInit {
   }
 
   openAddCandidateModal(): void {
+    this.isEditMode = false;
+    this.candidateToEdit = null;
     this.candidateForm.reset();
     this.candidateForm.patchValue({ isActive: true, gender: 'M' });
     this.showCandidateModal = true;
   }
-
-  closeCandidateModal(): void {
+  openEditCandidateModal(candidate: CandidateListDTO): void {
+    this.isEditMode = true;
+    this.candidateToEdit = candidate;
+    
+    // Load full candidate details
+    this.loading = true;
+    this.candidateService.getCandidateByCin(candidate.cin).subscribe({
+      next: (fullCandidate) => {
+        this.candidateForm.patchValue({
+          cin: fullCandidate.cin,
+          firstName: fullCandidate.firstName,
+          lastName: fullCandidate.lastName,
+          address: fullCandidate.address || '',
+          city: fullCandidate.city || '',
+          email: fullCandidate.email || '',
+          gender: fullCandidate.gender,
+          gsm: fullCandidate.gsm,
+          isActive: fullCandidate.isActive,
+          birthDay: fullCandidate.birthDay,
+          birthPlace: fullCandidate.birthPlace || ''
+        });
+        
+        // Disable CIN field for editing
+        this.candidateForm.get('cin')?.disable();
+        
+        this.loading = false;
+        this.showCandidateModal = true;
+      },
+      error: (error) => {
+        this.error = error;
+        this.loading = false;
+      }
+    });
+  }  closeCandidateModal(): void {
     this.showCandidateModal = false;
     this.candidateForm.reset();
+    this.candidateForm.get('cin')?.enable(); // Re-enable CIN field
     this.error = '';
     this.success = '';
-  }
-
-  onSubmitCandidate(): void {
-    if (this.candidateForm.valid) {
+    this.isEditMode = false;
+    this.candidateToEdit = null;
+  }  onSubmitCandidate(): void {
+    if (!this.isFormInvalid()) {
       this.saving = true;
       this.error = '';
 
-      const candidate: Candidate = this.candidateForm.value;
+      let candidate: Candidate;
+      
+      if (this.isEditMode) {
+        // Include disabled CIN field value for edit mode
+        candidate = {
+          ...this.candidateForm.getRawValue(), // getRawValue() includes disabled fields
+          cin: this.candidateToEdit!.cin // Ensure we use the original CIN
+        };
+      } else {
+        candidate = this.candidateForm.value;
+      }
 
       // Additional validation
       if (candidate.email && !this.candidateService.validateEmail(candidate.email)) {
@@ -270,9 +359,15 @@ export class CandidateManagementComponent implements OnInit {
         return;
       }
 
-      this.candidateService.saveCandidate(candidate).subscribe({
+      const operation = this.isEditMode 
+        ? this.candidateService.updateCandidate(this.candidateToEdit!.cin, candidate)
+        : this.candidateService.saveCandidate(candidate);
+
+      operation.subscribe({
         next: (savedCandidate) => {
-          this.success = 'Candidat ajouté avec succès!';
+          this.success = this.isEditMode 
+            ? 'Candidat modifié avec succès!' 
+            : 'Candidat ajouté avec succès!';
           this.saving = false;
           setTimeout(() => {
             this.closeCandidateModal();
@@ -288,8 +383,7 @@ export class CandidateManagementComponent implements OnInit {
       this.markFormGroupTouched(this.candidateForm);
     }
   }
-
-  openDeleteModal(candidate: Candidate): void {
+  openDeleteModal(candidate: CandidateListDTO): void {
     this.candidateToDelete = candidate;
     this.showDeleteModal = true;
   }
@@ -332,10 +426,9 @@ export class CandidateManagementComponent implements OnInit {
       }
       if (field.errors['email']) {
         return 'Format email invalide';
-      }
-      if (field.errors['pattern']) {
+      }      if (field.errors['pattern']) {
         if (fieldName === 'cin') {
-          return 'Format CIN invalide (ex: AB123456)';
+          return 'Format CIN invalide (ex: A12345, A123456 ou AB123456)';
         }
         if (fieldName === 'gsm') {
           return 'Format téléphone invalide (ex: +212601234567)';
@@ -355,7 +448,19 @@ export class CandidateManagementComponent implements OnInit {
     });
   }
 
-  trackByCin(index: number, candidate: Candidate): string {
+  isFormInvalid(): boolean {
+    if (this.isEditMode) {
+      // In edit mode, check validity ignoring the disabled CIN field
+      const formValue = this.candidateForm.getRawValue();
+      const requiredFields = ['firstName', 'lastName', 'gender', 'gsm', 'birthDay'];
+      return requiredFields.some(field => !formValue[field]) || 
+             this.candidateForm.hasError('email') || 
+             this.candidateForm.hasError('pattern');
+    }
+    return this.candidateForm.invalid;
+  }
+
+  trackByCin(index: number, candidate: CandidateListDTO): string {
     return candidate.cin;
   }
 
@@ -384,5 +489,77 @@ export class CandidateManagementComponent implements OnInit {
     }
     // Format: 06 01 23 45 67
     return phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
+  }
+
+  // Méthodes pour la gestion des villes
+  onCityInput(event: any): void {
+    const value = event.target.value.toUpperCase();
+    if (value.length > 0) {
+      this.filteredCities = this.moroccanCities.filter(city => 
+        city.includes(value)
+      );
+      this.showCityDropdown = this.filteredCities.length > 0;
+    } else {
+      this.filteredCities = [];
+      this.showCityDropdown = false;
+    }
+  }
+  selectCity(city: string): void {
+    this.candidateForm.patchValue({ city: city });
+    this.showCityDropdown = false;
+    this.filteredCities = [];
+  }
+
+  onCityFocus(): void {
+    const currentValue = this.candidateForm.get('city')?.value || '';
+    if (currentValue.length > 0) {
+      this.onCityInput({ target: { value: currentValue } });
+    } else {
+      this.filteredCities = this.moroccanCities;
+      this.showCityDropdown = true;
+    }
+  }
+  onCityBlur(): void {
+    // Delay hiding dropdown to allow selection
+    setTimeout(() => {
+      this.showCityDropdown = false;
+    }, 300);
+  }
+
+  // Méthodes pour la gestion des villes dans le formulaire de recherche
+  onSearchCityInput(event: any): void {
+    const value = event.target.value.toUpperCase();
+    if (value.length > 0) {
+      this.filteredSearchCities = this.moroccanCities.filter(city => 
+        city.includes(value)
+      );
+      this.showSearchCityDropdown = this.filteredSearchCities.length > 0;
+    } else {
+      this.filteredSearchCities = [];
+      this.showSearchCityDropdown = false;
+    }
+  }
+
+  selectSearchCity(city: string): void {
+    this.searchForm.patchValue({ city: city });
+    this.showSearchCityDropdown = false;
+    this.filteredSearchCities = [];
+  }
+
+  onSearchCityFocus(): void {
+    const currentValue = this.searchForm.get('city')?.value || '';
+    if (currentValue.length > 0) {
+      this.onSearchCityInput({ target: { value: currentValue } });
+    } else {
+      this.filteredSearchCities = this.moroccanCities;
+      this.showSearchCityDropdown = true;
+    }
+  }
+
+  onSearchCityBlur(): void {
+    // Delay hiding dropdown to allow selection
+    setTimeout(() => {
+      this.showSearchCityDropdown = false;
+    }, 300);
   }
 }

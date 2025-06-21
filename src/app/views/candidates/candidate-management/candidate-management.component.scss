@@ -122,4 +122,21 @@
       width: 100%;
     }
   }
+
+  // Styles pour le dropdown des villes
+  .city-dropdown {
+    .city-item {
+      cursor: pointer;
+      transition: background-color 0.15s ease-in-out;
+      
+      &:hover {
+        background-color: var(--cui-primary-bg-subtle) !important;
+        color: var(--cui-primary-text-emphasis);
+      }
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
+    }
+  }
 }

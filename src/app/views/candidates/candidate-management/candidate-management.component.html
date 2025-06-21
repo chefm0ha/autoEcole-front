@@ -38,13 +38,31 @@
             placeholder="CIN..." 
             formControlName="cin"
             (keyup.enter)="onSearch()">
-        </c-col>
-        <c-col [md]="2">
-          <input 
-            cFormControl 
-            placeholder="Ville..." 
-            formControlName="city"
-            (keyup.enter)="onSearch()">
+        </c-col>        <c-col [md]="2">
+          <div class="position-relative">
+            <input 
+              cFormControl 
+              placeholder="Ville..." 
+              formControlName="city"
+              (input)="onSearchCityInput($event)"
+              (focus)="onSearchCityFocus()"
+              (blur)="onSearchCityBlur()"
+              (keyup.enter)="onSearch()"
+              autocomplete="off"
+              style="text-transform: uppercase;">
+            <!-- Dropdown des villes pour la recherche -->
+            <div 
+              *ngIf="showSearchCityDropdown" 
+              class="position-absolute w-100 bg-white border rounded shadow-sm city-dropdown"
+              style="z-index: 1000; max-height: 200px; overflow-y: auto; top: 100%; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
+              <div 
+                *ngFor="let city of filteredSearchCities" 
+                class="p-2 border-bottom city-item"
+                (mousedown)="selectSearchCity(city)">
+                {{ city }}
+              </div>
+            </div>
+          </div>
         </c-col>
         <c-col [md]="2">
           <select cSelect formControlName="isActive">
@@ -144,8 +162,7 @@
               <svg cIcon [name]="getSortIcon('lastName')" size="sm" class="ms-1"></svg>
             </th>
             <th>Email</th>
-            <th>Téléphone</th>
-            <th 
+            <th>Téléphone</th>            <th 
               class="sortable" 
               (click)="sort('city')"
               style="cursor: pointer;">
@@ -153,6 +170,13 @@
               <svg cIcon [name]="getSortIcon('city')" size="sm" class="ms-1"></svg>
             </th>
             <th>Date de naissance</th>
+            <th 
+              class="sortable" 
+              (click)="sort('startingDate')"
+              style="cursor: pointer;">
+              Date d'inscription 
+              <svg cIcon [name]="getSortIcon('startingDate')" size="sm" class="ms-1"></svg>
+            </th>
             <th>Statut</th>
             <th class="text-center">Actions</th>
           </tr>
@@ -166,12 +190,15 @@
               <span *ngIf="candidate.email">{{ candidate.email }}</span>
               <span *ngIf="!candidate.email" class="text-muted">-</span>
             </td>
-            <td>{{ formatPhone(candidate.gsm) }}</td>
-            <td>
+            <td>{{ formatPhone(candidate.gsm) }}</td>            <td>
               <span *ngIf="candidate.city">{{ candidate.city }}</span>
               <span *ngIf="!candidate.city" class="text-muted">-</span>
             </td>
             <td>{{ formatDate(candidate.birthDay) }}</td>
+            <td>
+              <span *ngIf="candidate.startingDate">{{ formatDate(candidate.startingDate) }}</span>
+              <span *ngIf="!candidate.startingDate" class="text-muted">-</span>
+            </td>
             <td>
               <c-badge 
                 [color]="candidate.isActive ? 'success' : 'secondary'"
@@ -184,9 +211,8 @@
                 <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false">
                   <svg cIcon name="cilOptions"></svg>
                 </button>
-                <ul cDropdownMenu>
-                  <li>
-                    <button cDropdownItem>
+                <ul cDropdownMenu>                  <li>
+                    <button cDropdownItem (click)="openEditCandidateModal(candidate)">
                       <svg cIcon name="cilPencil" class="me-2"></svg>
                       Modifier
                     </button>
@@ -290,7 +316,10 @@
   [keyboard]="false"
   [backdrop]="'static'"
   size="lg">  <c-modal-header>
-    <h4 cModalTitle>Ajouter un nouveau candidat</h4>
+    <h4 cModalTitle>
+      <svg cIcon [name]="isEditMode ? 'cilPencil' : 'cilPlus'" class="me-2"></svg>
+      {{ isEditMode ? 'Modifier le candidat' : 'Ajouter un nouveau candidat' }}
+    </h4>
     <button 
       type="button" 
       class="btn-close" 
@@ -313,16 +342,16 @@
     </c-alert>
 
     <form [formGroup]="candidateForm" cForm>
-      <c-row class="g-3">
-        <!-- CIN -->
+      <c-row class="g-3">        <!-- CIN -->
         <c-col [md]="6">
           <label cLabel for="cin">CIN *</label>
           <input 
             cFormControl 
             id="cin" 
             formControlName="cin" 
-            placeholder="Ex: AB123456"
+            placeholder="Ex: A12345"
             [class.is-invalid]="isFieldInvalid(candidateForm, 'cin')"
+            [disabled]="isEditMode"
             style="text-transform: uppercase;">
           <c-form-feedback 
             *ngIf="isFieldInvalid(candidateForm, 'cin')" 
@@ -412,15 +441,38 @@
             cFormControl 
             id="address" 
             formControlName="address">
-        </c-col>
-
-        <!-- City -->
+        </c-col>        <!-- City -->
         <c-col [md]="4">
           <label cLabel for="city">Ville</label>
-          <input 
-            cFormControl 
-            id="city" 
-            formControlName="city">
+          <div class="position-relative">
+            <input 
+              cFormControl 
+              id="city" 
+              formControlName="city"
+              placeholder="Rechercher une ville..."
+              (input)="onCityInput($event)"
+              (focus)="onCityFocus()"
+              (blur)="onCityBlur()"
+              autocomplete="off"
+              style="text-transform: uppercase;">
+              <!-- Dropdown des villes -->
+            <div 
+              *ngIf="showCityDropdown" 
+              class="position-absolute w-100 bg-white border rounded shadow-sm city-dropdown"
+              style="z-index: 1000; max-height: 200px; overflow-y: auto; top: 100%; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
+              <div 
+                *ngFor="let city of filteredCities" 
+                class="p-2 border-bottom city-item"
+                (mousedown)="selectCity(city)">
+                {{ city }}
+              </div>
+              <div 
+                *ngIf="filteredCities.length === 0" 
+                class="p-2 text-muted">
+                Aucune ville trouvée
+              </div>
+            </div>
+          </div>
         </c-col>
 
         <!-- Email -->
@@ -490,20 +542,19 @@
       (click)="closeCandidateModal()"
       [disabled]="saving">
       Annuler
-    </button>
-    <button 
+    </button>    <button 
       cButton 
       color="primary" 
       (click)="onSubmitCandidate()"
-      [disabled]="saving || candidateForm.invalid">
+      [disabled]="saving || isFormInvalid()">
       <c-spinner 
         *ngIf="saving" 
         aria-hidden="true" 
         size="sm" 
         class="me-2">
       </c-spinner>
-      <span *ngIf="!saving">Enregistrer</span>
-      <span *ngIf="saving">Enregistrement...</span>
+      <span *ngIf="!saving">{{ isEditMode ? 'Modifier' : 'Enregistrer' }}</span>
+      <span *ngIf="saving">{{ isEditMode ? 'Modification...' : 'Enregistrement...' }}</span>
     </button>
   </c-modal-footer>
 </c-modal>
@@ -513,8 +564,7 @@
   [visible]="showDeleteModal" 
   (visibleChange)="showDeleteModal = $event"
   [keyboard]="false"
-  [backdrop]="'static'"
-  size="sm">  <c-modal-header>
+  [backdrop]="'static'"><c-modal-header>
     <h4 cModalTitle class="text-danger">
       <svg cIcon name="cilWarning" class="me-2"></svg>
       Confirmer la suppression

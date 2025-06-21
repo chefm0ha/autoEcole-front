@@ -19,6 +19,25 @@ export interface Candidate {
   sessions?: any[];
 }
 
+/**
+ * Optimized DTO for candidate list display - matches backend CandidateListDTO
+ * Contains only the fields needed for the candidate management table
+ */
+export interface CandidateListDTO {
+  cin: string;
+  gender: 'M' | 'F';
+  firstName: string;
+  lastName: string;
+  birthDay: string;
+  birthPlace?: string;
+  isActive: boolean;
+  city?: string;
+  address?: string;
+  email?: string;
+  gsm: string;
+  startingDate?: string;
+}
+
 export interface CandidateSearchDTO {
   firstName?: string;
   lastName?: string;

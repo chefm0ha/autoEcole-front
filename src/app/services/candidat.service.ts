@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Candidate, CandidateSearchDTO, PageableResponse } from '../models/candidat.model';
+import { Candidate, CandidateListDTO, CandidateSearchDTO, PageableResponse } from '../models/candidat.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,53 +11,50 @@ export class CandidateService {
   private apiUrl = 'http://localhost:9090/candidate';
 
   constructor(private http: HttpClient) { }
-
-  // Get all candidates with pagination
+  // Get all candidates with pagination (optimized response)
   getAllCandidates(
     page: number = 0,
     size: number = 10,
     sortBy: string = 'lastName',
     sortDirection: string = 'asc'
-  ): Observable<PageableResponse<Candidate>> {
+  ): Observable<PageableResponse<CandidateListDTO>> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
       .set('sortBy', sortBy)
       .set('sortDirection', sortDirection);
 
-    return this.http.get<PageableResponse<Candidate>>(`${this.apiUrl}/getAllCandidates`, { 
+    return this.http.get<PageableResponse<CandidateListDTO>>(`${this.apiUrl}/getAllCandidates`, { 
       params,
       withCredentials: true 
     }).pipe(catchError(this.handleError));
   }
-
-  // Get active candidates with pagination
+  // Get active candidates with pagination (optimized response)
   getActiveCandidates(
     page: number = 0,
     size: number = 10,
     sortBy: string = 'lastName',
     sortDirection: string = 'asc'
-  ): Observable<PageableResponse<Candidate>> {
+  ): Observable<PageableResponse<CandidateListDTO>> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
       .set('sortBy', sortBy)
       .set('sortDirection', sortDirection);
 
-    return this.http.get<PageableResponse<Candidate>>(`${this.apiUrl}/getActiveCandidates`, { 
+    return this.http.get<PageableResponse<CandidateListDTO>>(`${this.apiUrl}/getActiveCandidates`, { 
       params,
       withCredentials: true 
     }).pipe(catchError(this.handleError));
   }
-
-  // Search candidates with filters
+  // Search candidates with filters (optimized response)
   searchCandidates(
     searchCriteria: CandidateSearchDTO,
     page: number = 0,
     size: number = 10,
     sortBy: string = 'lastName',
     sortDirection: string = 'asc'
-  ): Observable<PageableResponse<Candidate>> {
+  ): Observable<PageableResponse<CandidateListDTO>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
@@ -84,7 +81,7 @@ export class CandidateService {
       params = params.set('email', searchCriteria.email);
     }
 
-    return this.http.get<PageableResponse<Candidate>>(`${this.apiUrl}/search`, { 
+    return this.http.get<PageableResponse<CandidateListDTO>>(`${this.apiUrl}/search`, { 
       params,
       withCredentials: true 
     }).pipe(catchError(this.handleError));
@@ -108,6 +105,21 @@ export class CandidateService {
     };
 
     return this.http.post<Candidate>(`${this.apiUrl}/saveCandidate`, formattedCandidate, {
+      withCredentials: true
+    }).pipe(catchError(this.handleError));
+  }
+
+  // Update candidate
+  updateCandidate(cin: string, candidate: Candidate): Observable<Candidate> {
+    // Format names properly before sending
+    const formattedCandidate = {
+      ...candidate,
+      firstName: this.formatName(candidate.firstName),
+      lastName: this.formatName(candidate.lastName),
+      birthPlace: candidate.birthPlace ? this.formatName(candidate.birthPlace) : undefined
+    };
+
+    return this.http.put<Candidate>(`${this.apiUrl}/updateCandidate/${cin}`, formattedCandidate, {
       withCredentials: true
     }).pipe(catchError(this.handleError));
   }
