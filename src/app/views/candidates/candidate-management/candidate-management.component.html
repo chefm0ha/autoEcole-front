@@ -1,0 +1,571 @@
+<c-card>
+  <c-card-header class="d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <svg cIcon name="cilPeople" class="me-2"></svg>
+      Gestion des Candidats
+    </h5>
+    <button 
+      cButton 
+      color="primary" 
+      (click)="openAddCandidateModal()"
+      class="d-flex align-items-center">
+      <svg cIcon name="cilPlus" class="me-1"></svg>
+      Ajouter Candidat
+    </button>
+  </c-card-header>
+
+  <c-card-body>
+    <!-- Search and Filters -->
+    <form [formGroup]="searchForm" cForm class="mb-4">
+      <c-row class="g-3">
+        <c-col [md]="3">
+          <input 
+            cFormControl 
+            placeholder="Prénom..." 
+            formControlName="firstName"
+            (keyup.enter)="onSearch()">
+        </c-col>
+        <c-col [md]="3">
+          <input 
+            cFormControl 
+            placeholder="Nom..." 
+            formControlName="lastName"
+            (keyup.enter)="onSearch()">
+        </c-col>
+        <c-col [md]="2">
+          <input 
+            cFormControl 
+            placeholder="CIN..." 
+            formControlName="cin"
+            (keyup.enter)="onSearch()">
+        </c-col>
+        <c-col [md]="2">
+          <input 
+            cFormControl 
+            placeholder="Ville..." 
+            formControlName="city"
+            (keyup.enter)="onSearch()">
+        </c-col>
+        <c-col [md]="2">
+          <select cSelect formControlName="isActive">
+            <option value="">Tous</option>
+            <option [value]="true">Actifs</option>
+            <option [value]="false">Inactifs</option>
+          </select>
+        </c-col>
+      </c-row>
+      
+      <c-row class="mt-3">
+        <c-col [md]="6">
+          <input 
+            cFormControl 
+            placeholder="Email..." 
+            formControlName="email"
+            (keyup.enter)="onSearch()">
+        </c-col>
+        <c-col [md]="6" class="d-flex gap-2">
+          <button cButton color="info" (click)="onSearch()" type="button">
+            <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
+            Rechercher
+          </button>
+          <button cButton color="secondary" (click)="clearSearch()" type="button">
+            <svg cIcon name="cilX" class="me-1"></svg>
+            Effacer
+          </button>
+          <button 
+            cButton 
+            [color]="showActiveOnly ? 'success' : 'outline-success'" 
+            (click)="toggleActiveFilter()" 
+            type="button">
+            <svg cIcon name="cilCheckCircle" class="me-1"></svg>
+            Actifs uniquement
+          </button>
+        </c-col>
+      </c-row>
+    </form>
+
+    <!-- Results Info -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="text-muted">
+        {{ totalElements }} candidat(s) trouvé(s)
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted">Afficher:</span>
+        <c-dropdown>
+          <button cButton cDropdownToggle color="outline-secondary" size="sm">
+            {{ pageSize }} par page
+          </button>
+          <ul cDropdownMenu>
+            <li><button cDropdownItem (click)="changePageSize(5)">5 par page</button></li>
+            <li><button cDropdownItem (click)="changePageSize(10)">10 par page</button></li>
+            <li><button cDropdownItem (click)="changePageSize(25)">25 par page</button></li>
+            <li><button cDropdownItem (click)="changePageSize(50)">50 par page</button></li>
+          </ul>
+        </c-dropdown>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center p-4">
+      <c-spinner aria-hidden="true"></c-spinner>
+      <p class="mt-2 text-muted">Chargement des candidats...</p>
+    </div>
+
+    <!-- Error -->
+    <c-alert *ngIf="error && !loading" color="danger" [dismissible]="true">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error }}
+    </c-alert>
+
+    <!-- Candidates Table -->
+    <div *ngIf="!loading && candidates.length > 0" class="table-responsive">
+      <table cTable [hover]="true" [striped]="true" class="mb-0">
+        <thead>
+          <tr>
+            <th 
+              class="sortable" 
+              (click)="sort('cin')"
+              style="cursor: pointer;">
+              CIN 
+              <svg cIcon [name]="getSortIcon('cin')" size="sm" class="ms-1"></svg>
+            </th>
+            <th 
+              class="sortable" 
+              (click)="sort('firstName')"
+              style="cursor: pointer;">
+              Prénom 
+              <svg cIcon [name]="getSortIcon('firstName')" size="sm" class="ms-1"></svg>
+            </th>
+            <th 
+              class="sortable" 
+              (click)="sort('lastName')"
+              style="cursor: pointer;">
+              Nom 
+              <svg cIcon [name]="getSortIcon('lastName')" size="sm" class="ms-1"></svg>
+            </th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th 
+              class="sortable" 
+              (click)="sort('city')"
+              style="cursor: pointer;">
+              Ville 
+              <svg cIcon [name]="getSortIcon('city')" size="sm" class="ms-1"></svg>
+            </th>
+            <th>Date de naissance</th>
+            <th>Statut</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let candidate of candidates; trackBy: trackByCin">
+            <td class="fw-semibold">{{ candidate.cin }}</td>
+            <td>{{ candidate.firstName }}</td>
+            <td>{{ candidate.lastName }}</td>
+            <td>
+              <span *ngIf="candidate.email">{{ candidate.email }}</span>
+              <span *ngIf="!candidate.email" class="text-muted">-</span>
+            </td>
+            <td>{{ formatPhone(candidate.gsm) }}</td>
+            <td>
+              <span *ngIf="candidate.city">{{ candidate.city }}</span>
+              <span *ngIf="!candidate.city" class="text-muted">-</span>
+            </td>
+            <td>{{ formatDate(candidate.birthDay) }}</td>
+            <td>
+              <c-badge 
+                [color]="candidate.isActive ? 'success' : 'secondary'"
+                class="me-1">
+                {{ candidate.isActive ? 'Actif' : 'Inactif' }}
+              </c-badge>
+            </td>
+            <td class="text-center">
+              <c-dropdown>
+                <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false">
+                  <svg cIcon name="cilOptions"></svg>
+                </button>
+                <ul cDropdownMenu>
+                  <li>
+                    <button cDropdownItem>
+                      <svg cIcon name="cilPencil" class="me-2"></svg>
+                      Modifier
+                    </button>
+                  </li>
+                  <li>
+                    <button cDropdownItem>
+                      <svg cIcon name="cilInfo" class="me-2"></svg>
+                      Voir détails
+                    </button>
+                  </li>
+                  <li><hr cDropdownDivider /></li>
+                  <li>
+                    <button cDropdownItem (click)="openDeleteModal(candidate)" class="text-danger">
+                      <svg cIcon name="cilTrash" class="me-2"></svg>
+                      Supprimer
+                    </button>
+                  </li>
+                </ul>
+              </c-dropdown>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- No Results -->
+    <div *ngIf="!loading && candidates.length === 0" class="text-center p-5">
+      <svg cIcon name="cilInbox" size="3xl" class="text-muted mb-3"></svg>
+      <h5 class="text-muted">Aucun candidat trouvé</h5>
+      <p class="text-muted">Modifiez vos critères de recherche ou ajoutez un nouveau candidat.</p>
+    </div>
+
+    <!-- Pagination -->
+    <nav *ngIf="!loading && totalPages > 1" class="d-flex justify-content-center mt-4">
+      <ul class="pagination">
+        <!-- First page -->
+        <li class="page-item" [class.disabled]="currentPage === 0">
+          <button 
+            class="page-link" 
+            (click)="goToPage(0)" 
+            [disabled]="currentPage === 0"
+            type="button">
+            <svg cIcon name="cilMediaSkipBackward"></svg>
+          </button>
+        </li>
+        
+        <!-- Previous page -->
+        <li class="page-item" [class.disabled]="currentPage === 0">
+          <button 
+            class="page-link" 
+            (click)="goToPage(currentPage - 1)" 
+            [disabled]="currentPage === 0"
+            type="button">
+            <svg cIcon name="cilChevronLeft"></svg>
+          </button>
+        </li>
+        
+        <!-- Page numbers -->
+        <li 
+          *ngFor="let page of getPages()" 
+          class="page-item"
+          [class.active]="page === currentPage">
+          <button 
+            class="page-link" 
+            (click)="goToPage(page)"
+            type="button">
+            {{ page + 1 }}
+          </button>
+        </li>
+        
+        <!-- Next page -->
+        <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+          <button 
+            class="page-link" 
+            (click)="goToPage(currentPage + 1)" 
+            [disabled]="currentPage === totalPages - 1"
+            type="button">
+            <svg cIcon name="cilChevronRight"></svg>
+          </button>
+        </li>
+        
+        <!-- Last page -->
+        <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+          <button 
+            class="page-link" 
+            (click)="goToPage(totalPages - 1)" 
+            [disabled]="currentPage === totalPages - 1"
+            type="button">
+            <svg cIcon name="cilMediaSkipForward"></svg>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </c-card-body>
+</c-card>
+
+<!-- Add Candidate Modal -->
+<c-modal 
+  [visible]="showCandidateModal" 
+  (visibleChange)="showCandidateModal = $event"
+  [keyboard]="false"
+  [backdrop]="'static'"
+  size="lg">  <c-modal-header>
+    <h4 cModalTitle>Ajouter un nouveau candidat</h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="closeCandidateModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    <!-- Success Alert -->
+    <c-alert *ngIf="success" color="success" [dismissible]="true">
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      {{ success }}
+    </c-alert>
+
+    <!-- Error Alert -->
+    <c-alert *ngIf="error" color="danger" [dismissible]="true">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error }}
+    </c-alert>
+
+    <form [formGroup]="candidateForm" cForm>
+      <c-row class="g-3">
+        <!-- CIN -->
+        <c-col [md]="6">
+          <label cLabel for="cin">CIN *</label>
+          <input 
+            cFormControl 
+            id="cin" 
+            formControlName="cin" 
+            placeholder="Ex: AB123456"
+            [class.is-invalid]="isFieldInvalid(candidateForm, 'cin')"
+            style="text-transform: uppercase;">
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'cin')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'cin') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- Gender -->
+        <c-col [md]="6">
+          <label cLabel for="gender">Sexe *</label>
+          <select 
+            cSelect 
+            id="gender" 
+            formControlName="gender"
+            [class.is-invalid]="isFieldInvalid(candidateForm, 'gender')">
+            <option value="">Choisir...</option>
+            <option value="M">Homme</option>
+            <option value="F">Femme</option>
+          </select>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'gender')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'gender') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- First Name -->
+        <c-col [md]="6">
+          <label cLabel for="firstName">Prénom *</label>
+          <input 
+            cFormControl 
+            id="firstName" 
+            formControlName="firstName"
+            [class.is-invalid]="isFieldInvalid(candidateForm, 'firstName')">
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'firstName')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'firstName') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- Last Name -->
+        <c-col [md]="6">
+          <label cLabel for="lastName">Nom *</label>
+          <input 
+            cFormControl 
+            id="lastName" 
+            formControlName="lastName"
+            [class.is-invalid]="isFieldInvalid(candidateForm, 'lastName')">
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'lastName')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'lastName') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- Birth Date -->
+        <c-col [md]="6">
+          <label cLabel for="birthDay">Date de naissance *</label>
+          <input 
+            cFormControl 
+            id="birthDay" 
+            type="date" 
+            formControlName="birthDay"
+            [class.is-invalid]="isFieldInvalid(candidateForm, 'birthDay')">
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'birthDay')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'birthDay') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- Birth Place -->
+        <c-col [md]="6">
+          <label cLabel for="birthPlace">Lieu de naissance</label>
+          <input 
+            cFormControl 
+            id="birthPlace" 
+            formControlName="birthPlace">
+        </c-col>
+
+        <!-- Address -->
+        <c-col [md]="8">
+          <label cLabel for="address">Adresse</label>
+          <input 
+            cFormControl 
+            id="address" 
+            formControlName="address">
+        </c-col>
+
+        <!-- City -->
+        <c-col [md]="4">
+          <label cLabel for="city">Ville</label>
+          <input 
+            cFormControl 
+            id="city" 
+            formControlName="city">
+        </c-col>
+
+        <!-- Email -->
+        <c-col [md]="6">
+          <label cLabel for="email">Email</label>
+          <c-input-group>
+            <span cInputGroupText>
+              <svg cIcon name="cilEnvelopeClosed"></svg>
+            </span>
+            <input 
+              cFormControl 
+              id="email" 
+              type="email" 
+              formControlName="email"
+              [class.is-invalid]="isFieldInvalid(candidateForm, 'email')">
+          </c-input-group>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'email')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'email') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- Phone -->
+        <c-col [md]="6">
+          <label cLabel for="gsm">Téléphone *</label>
+          <c-input-group>
+            <span cInputGroupText>
+              <svg cIcon name="cilPhone"></svg>
+            </span>
+            <input 
+              cFormControl 
+              id="gsm" 
+              type="tel" 
+              formControlName="gsm"
+              placeholder="Ex: +212601234567"
+              [class.is-invalid]="isFieldInvalid(candidateForm, 'gsm')">
+          </c-input-group>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(candidateForm, 'gsm')" 
+            [valid]="false">
+            {{ getFieldError(candidateForm, 'gsm') }}
+          </c-form-feedback>
+        </c-col>
+
+        <!-- Active Status -->
+        <c-col [md]="12">
+          <div class="form-check form-switch">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              id="isActive" 
+              formControlName="isActive">
+            <label class="form-check-label" for="isActive">
+              Candidat actif
+            </label>
+          </div>
+        </c-col>
+      </c-row>
+    </form>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closeCandidateModal()"
+      [disabled]="saving">
+      Annuler
+    </button>
+    <button 
+      cButton 
+      color="primary" 
+      (click)="onSubmitCandidate()"
+      [disabled]="saving || candidateForm.invalid">
+      <c-spinner 
+        *ngIf="saving" 
+        aria-hidden="true" 
+        size="sm" 
+        class="me-2">
+      </c-spinner>
+      <span *ngIf="!saving">Enregistrer</span>
+      <span *ngIf="saving">Enregistrement...</span>
+    </button>
+  </c-modal-footer>
+</c-modal>
+
+<!-- Delete Confirmation Modal -->
+<c-modal 
+  [visible]="showDeleteModal" 
+  (visibleChange)="showDeleteModal = $event"
+  [keyboard]="false"
+  [backdrop]="'static'"
+  size="sm">  <c-modal-header>
+    <h4 cModalTitle class="text-danger">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      Confirmer la suppression
+    </h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="closeDeleteModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    <!-- Error Alert -->
+    <c-alert *ngIf="error" color="danger" [dismissible]="true">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error }}
+    </c-alert>
+
+    <p>Êtes-vous sûr de vouloir supprimer le candidat :</p>
+    <div *ngIf="candidateToDelete" class="bg-light p-3 rounded">
+      <strong>{{ candidateToDelete.firstName }} {{ candidateToDelete.lastName }}</strong><br>
+      <small class="text-muted">CIN: {{ candidateToDelete.cin }}</small>
+    </div>
+    <p class="text-danger mt-3 mb-0">
+      <small><svg cIcon name="cilWarning" size="sm" class="me-1"></svg>
+      Cette action est irréversible.</small>
+    </p>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closeDeleteModal()"
+      [disabled]="deleting">
+      Annuler
+    </button>
+    <button 
+      cButton 
+      color="danger" 
+      (click)="confirmDelete()"
+      [disabled]="deleting">
+      <c-spinner 
+        *ngIf="deleting" 
+        aria-hidden="true" 
+        size="sm" 
+        class="me-2">
+      </c-spinner>
+      <span *ngIf="!deleting">Supprimer</span>
+      <span *ngIf="deleting">Suppression...</span>
+    </button>
+  </c-modal-footer>
+</c-modal>

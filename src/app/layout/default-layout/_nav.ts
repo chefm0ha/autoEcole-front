@@ -9,21 +9,14 @@ export const navItems: INavData[] = [
       color: 'info',
       text: 'ACCUEIL'
     }
-  },  {
-    name: 'Candidat',
-    url: '',
+  },
+  {
+    name: 'Candidats',
+    url: '/app/candidates',
     iconComponent: { name: 'cil-people' },
-    children: [
-      {
-        name: 'Ajouter un candidat',
-        icon: 'nav-icon-bullet',
-        url: '/app/candidats'
-      },
-      {
-        name: 'Liste des Candidats',
-        icon: 'nav-icon-bullet',
-        url: '/app/listCandidate'
-      }
-    ]
+    badge: {
+      color: 'success',
+      text: 'GESTION'
+    }
   }
 ];

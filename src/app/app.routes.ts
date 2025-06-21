@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { DefaultLayoutComponent } from './layout';
-import { CandidatsComponent } from './views/candidats/newCandidate/candidats.component';
-import { ListCandidateComponent } from './views/candidats/listCandidate/listCandidate.component';
+import { CandidateManagementComponent } from './views/candidates/candidate-management/candidate-management.component';
 import { LoginComponent } from './auth/login/login.component';
 import { Page404Component } from './pages/page404/page404.component';
 import { authGuard, loginGuard } from './auth/auth.guard';
@@ -38,17 +37,10 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'candidats',
-        component: CandidatsComponent,
+        path: 'candidates',
+        component: CandidateManagementComponent,
         data: {
-          title: 'Nouveau Candidat'
-        }
-      },
-      {
-        path: 'listCandidate',
-        component: ListCandidateComponent,
-        data: {
-          title: 'Liste des Candidats'
+          title: 'Gestion des Candidats'
         }
       },
       {

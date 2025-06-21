@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input, OnInit } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import {
   AvatarComponent,
@@ -17,7 +17,6 @@ import {
   HeaderComponent,
   HeaderNavComponent,
   HeaderTogglerDirective,
-  NavItemComponent,
   NavLinkDirective,
   SidebarToggleDirective
 } from '@coreui/angular';
@@ -28,7 +27,25 @@ import { AuthService, User } from '../../../auth/auth.service';
 @Component({
     selector: 'app-default-header',
     templateUrl: './default-header.component.html',
-  imports: [ContainerComponent, HeaderTogglerDirective, SidebarToggleDirective, IconDirective, HeaderNavComponent, NavItemComponent, NavLinkDirective, RouterLink, RouterLinkActive, NgTemplateOutlet, BreadcrumbRouterComponent, DropdownComponent, DropdownToggleDirective, AvatarComponent, DropdownMenuDirective, DropdownHeaderDirective, DropdownItemDirective, BadgeComponent, DropdownDividerDirective]
+  imports: [
+    ContainerComponent, 
+    HeaderTogglerDirective, 
+    SidebarToggleDirective, 
+    IconDirective, 
+    HeaderNavComponent, 
+    NavLinkDirective, 
+    RouterLink, 
+    NgTemplateOutlet, 
+    BreadcrumbRouterComponent, 
+    DropdownComponent, 
+    DropdownToggleDirective, 
+    AvatarComponent, 
+    DropdownMenuDirective, 
+    DropdownHeaderDirective, 
+    DropdownItemDirective, 
+    BadgeComponent, 
+    DropdownDividerDirective
+  ]
 })
 export class DefaultHeaderComponent extends HeaderComponent implements OnInit {
 
