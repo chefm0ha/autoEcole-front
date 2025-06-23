@@ -31,9 +31,6 @@ export interface CandidateListDTO {
   birthDay: string;
   birthPlace?: string;
   isActive: boolean;
-  city?: string;
-  address?: string;
-  email?: string;
   gsm: string;
   startingDate?: string;
 }
@@ -43,8 +40,6 @@ export interface CandidateSearchDTO {
   lastName?: string;
   cin?: string;
   isActive?: boolean;
-  city?: string;
-  email?: string;
 }
 
 export interface PageableResponse<T> {

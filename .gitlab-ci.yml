@@ -19,7 +19,7 @@ angular_build_prod:
       - $DIST_PATH
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
-      when: always
+      when: never
 
 
 deploy_on_ubuntu_master:
@@ -40,7 +40,7 @@ deploy_on_ubuntu_master:
         docker-compose up -d --build"
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
-      when: always
+      when: never
 
 #angular_build_develop:
 #  extends: angular_build_prod

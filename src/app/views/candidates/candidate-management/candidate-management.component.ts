@@ -33,6 +33,7 @@ import {
 import { IconDirective } from '@coreui/icons-angular';
 import { Candidate, CandidateListDTO, CandidateSearchDTO, PageableResponse } from '../../../models/candidat.model';
 import { CandidateService } from '../../../services/candidat.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-candidate-management',
@@ -89,7 +90,7 @@ export class CandidateManagementComponent implements OnInit {
   pageSize = 10;
   totalPages = 0;
   totalElements = 0;
-    // Sorting
+  // Sorting
   sortBy = 'startingDate';
   sortDirection = 'desc';
   
@@ -97,15 +98,14 @@ export class CandidateManagementComponent implements OnInit {
   showCandidateModal = false;
   showDeleteModal = false;
   candidateToDelete: CandidateListDTO | null = null;
-  
-  // Edit mode
+    // Edit mode
   isEditMode = false;
   candidateToEdit: CandidateListDTO | null = null;
+  
+  // Search mode flag
+  isSearchTriggered = false;
 
-  // Filters
-  showActiveOnly = false;
-
-  // Liste des villes marocaines
+  // Liste des villes marocaines pour le formulaire candidat
   moroccanCities = [
     'AGADIR',
     'AL HOCEIMA',
@@ -142,17 +142,15 @@ export class CandidateManagementComponent implements OnInit {
     'TETOUAN',
     'TIFLET'
   ];
-  // Filtered cities for search
+  
+  // Filtered cities for candidate form
   filteredCities: string[] = [];
   showCityDropdown = false;
-  
-  // Filtered cities for search form
-  filteredSearchCities: string[] = [];
-  showSearchCityDropdown = false;
 
   constructor(
     private candidateService: CandidateService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
     this.candidateForm = this.createCandidateForm();
     this.searchForm = this.createSearchForm();
@@ -176,18 +174,16 @@ export class CandidateManagementComponent implements OnInit {
       birthDay: ['', Validators.required],
       birthPlace: ['']
     });
-  }
-  createSearchForm(): FormGroup {
+  }  createSearchForm(): FormGroup {
     return this.fb.group({
       firstName: [''],
       lastName: [''],
       cin: [''],
-      city: [''],
-      email: [''],
       isActive: [''] // Set to empty string for "Tous" option
     });
+  }viewCandidateDetails(candidate: CandidateListDTO): void {
+    this.router.navigate(['/app/candidates', candidate.cin]);
   }
-
   loadCandidates(): void {
     this.loading = true;
     this.error = '';
@@ -195,22 +191,23 @@ export class CandidateManagementComponent implements OnInit {
     const searchCriteria = this.getSearchCriteria();
     const hasSearchCriteria = Object.values(searchCriteria).some(value => 
       value !== null && value !== undefined && value !== ''
-    );
-
-    let request;
-    if (hasSearchCriteria) {
+    );    let request;
+    // If search was explicitly triggered, always use search endpoint (even with empty fields)
+    // to get all candidates (active and inactive)
+    if (this.isSearchTriggered) {
       request = this.candidateService.searchCandidates(
         searchCriteria, this.currentPage, this.pageSize, this.sortBy, this.sortDirection
       );
-    } else if (this.showActiveOnly) {
-      request = this.candidateService.getActiveCandidates(
-        this.currentPage, this.pageSize, this.sortBy, this.sortDirection
+    } else if (hasSearchCriteria) {
+      request = this.candidateService.searchCandidates(
+        searchCriteria, this.currentPage, this.pageSize, this.sortBy, this.sortDirection
       );
     } else {
+      // Default load - get only active candidates
       request = this.candidateService.getAllCandidates(
         this.currentPage, this.pageSize, this.sortBy, this.sortDirection
       );
-    }    request.subscribe({
+    }request.subscribe({
       next: (response: PageableResponse<CandidateListDTO>) => {
         this.candidates = response.content;
         this.totalPages = response.totalPages;
@@ -222,36 +219,25 @@ export class CandidateManagementComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-  getSearchCriteria(): CandidateSearchDTO {
+  }  getSearchCriteria(): CandidateSearchDTO {
     const formValue = this.searchForm.value;
     return {
       firstName: formValue.firstName?.trim() || undefined,
       lastName: formValue.lastName?.trim() || undefined,
       cin: formValue.cin?.trim() || undefined,
-      city: formValue.city?.trim() || undefined,
-      email: formValue.email?.trim() || undefined,
       isActive: formValue.isActive === '' ? undefined : formValue.isActive
     };
-  }
-  onSearch(): void {
+  }  onSearch(): void {
     console.log('Search triggered with criteria:', this.getSearchCriteria());
+    this.isSearchTriggered = true;
     this.currentPage = 0;
     this.loadCandidates();
-  }
-  clearSearch(): void {
+  }  clearSearch(): void {
     this.searchForm.reset();
     this.searchForm.patchValue({ isActive: '' }); // Set to empty string for "Tous"
-    this.currentPage = 0;
-    this.loadCandidates();
+    this.isSearchTriggered = false; // Reset search flag
+    this.currentPage = 0;    this.loadCandidates();
   }
-
-  toggleActiveFilter(): void {
-    this.showActiveOnly = !this.showActiveOnly;
-    this.currentPage = 0;
-    this.loadCandidates();
-  }
-
   sort(column: string): void {
     if (this.sortBy === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -260,6 +246,7 @@ export class CandidateManagementComponent implements OnInit {
       this.sortDirection = 'asc';
     }
     this.currentPage = 0;
+    // Keep search context if search was triggered
     this.loadCandidates();
   }
 
@@ -491,7 +478,7 @@ export class CandidateManagementComponent implements OnInit {
     return phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
   }
 
-  // Méthodes pour la gestion des villes
+  // Méthodes pour la gestion des villes dans le formulaire candidat
   onCityInput(event: any): void {
     const value = event.target.value.toUpperCase();
     if (value.length > 0) {
@@ -504,6 +491,7 @@ export class CandidateManagementComponent implements OnInit {
       this.showCityDropdown = false;
     }
   }
+
   selectCity(city: string): void {
     this.candidateForm.patchValue({ city: city });
     this.showCityDropdown = false;
@@ -519,47 +507,11 @@ export class CandidateManagementComponent implements OnInit {
       this.showCityDropdown = true;
     }
   }
+
   onCityBlur(): void {
     // Delay hiding dropdown to allow selection
     setTimeout(() => {
       this.showCityDropdown = false;
-    }, 300);
-  }
-
-  // Méthodes pour la gestion des villes dans le formulaire de recherche
-  onSearchCityInput(event: any): void {
-    const value = event.target.value.toUpperCase();
-    if (value.length > 0) {
-      this.filteredSearchCities = this.moroccanCities.filter(city => 
-        city.includes(value)
-      );
-      this.showSearchCityDropdown = this.filteredSearchCities.length > 0;
-    } else {
-      this.filteredSearchCities = [];
-      this.showSearchCityDropdown = false;
-    }
-  }
-
-  selectSearchCity(city: string): void {
-    this.searchForm.patchValue({ city: city });
-    this.showSearchCityDropdown = false;
-    this.filteredSearchCities = [];
-  }
-
-  onSearchCityFocus(): void {
-    const currentValue = this.searchForm.get('city')?.value || '';
-    if (currentValue.length > 0) {
-      this.onSearchCityInput({ target: { value: currentValue } });
-    } else {
-      this.filteredSearchCities = this.moroccanCities;
-      this.showSearchCityDropdown = true;
-    }
-  }
-
-  onSearchCityBlur(): void {
-    // Delay hiding dropdown to allow selection
-    setTimeout(() => {
-      this.showSearchCityDropdown = false;
     }, 300);
   }
 }

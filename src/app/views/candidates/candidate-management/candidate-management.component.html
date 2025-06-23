@@ -1,109 +1,69 @@
-<c-card>
-  <c-card-header class="d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">
-      <svg cIcon name="cilPeople" class="me-2"></svg>
-      Gestion des Candidats
-    </h5>
-    <button 
-      cButton 
-      color="primary" 
-      (click)="openAddCandidateModal()"
-      class="d-flex align-items-center">
-      <svg cIcon name="cilPlus" class="me-1"></svg>
-      Ajouter Candidat
-    </button>
-  </c-card-header>
+<!-- Main Content Container -->
+<div class="container-fluid px-2 px-md-4">
+  <c-card>
+    <c-card-header class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <svg cIcon name="cilPeople" class="me-2"></svg>
+        Gestion des Candidats
+      </h5>
+      <button 
+        cButton 
+        color="primary" 
+        (click)="openAddCandidateModal()"
+        class="d-flex align-items-center">
+        <svg cIcon name="cilPlus" class="me-1"></svg>
+        Ajouter Candidat
+      </button>
+    </c-card-header>
 
-  <c-card-body>
-    <!-- Search and Filters -->
+  <c-card-body>    <!-- Search and Filters -->
     <form [formGroup]="searchForm" cForm class="mb-4">
-      <c-row class="g-3">
-        <c-col [md]="3">
+      <c-row class="g-3 align-items-end">
+        <c-col [sm]="12" [md]="6" [lg]="3">
+          <label cLabel class="form-label">Prénom</label>
           <input 
             cFormControl 
             placeholder="Prénom..." 
             formControlName="firstName"
             (keyup.enter)="onSearch()">
         </c-col>
-        <c-col [md]="3">
+        <c-col [sm]="12" [md]="6" [lg]="3">
+          <label cLabel class="form-label">Nom</label>
           <input 
             cFormControl 
             placeholder="Nom..." 
             formControlName="lastName"
             (keyup.enter)="onSearch()">
         </c-col>
-        <c-col [md]="2">
+        <c-col [sm]="12" [md]="6" [lg]="2">
+          <label cLabel class="form-label">CIN</label>
           <input 
             cFormControl 
             placeholder="CIN..." 
             formControlName="cin"
             (keyup.enter)="onSearch()">
-        </c-col>        <c-col [md]="2">
-          <div class="position-relative">
-            <input 
-              cFormControl 
-              placeholder="Ville..." 
-              formControlName="city"
-              (input)="onSearchCityInput($event)"
-              (focus)="onSearchCityFocus()"
-              (blur)="onSearchCityBlur()"
-              (keyup.enter)="onSearch()"
-              autocomplete="off"
-              style="text-transform: uppercase;">
-            <!-- Dropdown des villes pour la recherche -->
-            <div 
-              *ngIf="showSearchCityDropdown" 
-              class="position-absolute w-100 bg-white border rounded shadow-sm city-dropdown"
-              style="z-index: 1000; max-height: 200px; overflow-y: auto; top: 100%; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
-              <div 
-                *ngFor="let city of filteredSearchCities" 
-                class="p-2 border-bottom city-item"
-                (mousedown)="selectSearchCity(city)">
-                {{ city }}
-              </div>
-            </div>
-          </div>
         </c-col>
-        <c-col [md]="2">
+        <c-col [sm]="12" [md]="6" [lg]="2">
+          <label cLabel class="form-label">Statut</label>
           <select cSelect formControlName="isActive">
             <option value="">Tous</option>
             <option [value]="true">Actifs</option>
             <option [value]="false">Inactifs</option>
           </select>
         </c-col>
-      </c-row>
-      
-      <c-row class="mt-3">
-        <c-col [md]="6">
-          <input 
-            cFormControl 
-            placeholder="Email..." 
-            formControlName="email"
-            (keyup.enter)="onSearch()">
-        </c-col>
-        <c-col [md]="6" class="d-flex gap-2">
-          <button cButton color="info" (click)="onSearch()" type="button">
+        <c-col [sm]="12" [lg]="2" class="d-flex flex-column flex-sm-row gap-2">
+          <button cButton color="info" (click)="onSearch()" type="button" class="flex-fill">
             <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
-            Rechercher
+            <span class="d-none d-sm-inline">Rechercher</span>
+            <span class="d-sm-none">Recherche</span>
           </button>
-          <button cButton color="secondary" (click)="clearSearch()" type="button">
-            <svg cIcon name="cilX" class="me-1"></svg>
-            Effacer
-          </button>
-          <button 
-            cButton 
-            [color]="showActiveOnly ? 'success' : 'outline-success'" 
-            (click)="toggleActiveFilter()" 
-            type="button">
-            <svg cIcon name="cilCheckCircle" class="me-1"></svg>
-            Actifs uniquement
+          <button cButton color="secondary" (click)="clearSearch()" type="button" title="Effacer" class="flex-shrink-0">
+            <svg cIcon name="cilX"></svg>
           </button>
         </c-col>
       </c-row>
-    </form>
-
-    <!-- Results Info -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    </form>    <!-- Results Info -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
       <div class="text-muted">
         {{ totalElements }} candidat(s) trouvé(s)
       </div>
@@ -137,66 +97,50 @@
 
     <!-- Candidates Table -->
     <div *ngIf="!loading && candidates.length > 0" class="table-responsive">
-      <table cTable [hover]="true" [striped]="true" class="mb-0">
-        <thead>
+      <table cTable [hover]="true" [striped]="true" class="mb-0">        <thead>
           <tr>
             <th 
               class="sortable" 
               (click)="sort('cin')"
-              style="cursor: pointer;">
+              style="cursor: pointer; min-width: 100px;">
               CIN 
               <svg cIcon [name]="getSortIcon('cin')" size="sm" class="ms-1"></svg>
             </th>
             <th 
               class="sortable" 
               (click)="sort('firstName')"
-              style="cursor: pointer;">
+              style="cursor: pointer; min-width: 120px;">
               Prénom 
               <svg cIcon [name]="getSortIcon('firstName')" size="sm" class="ms-1"></svg>
             </th>
             <th 
               class="sortable" 
               (click)="sort('lastName')"
-              style="cursor: pointer;">
+              style="cursor: pointer; min-width: 120px;">
               Nom 
-              <svg cIcon [name]="getSortIcon('lastName')" size="sm" class="ms-1"></svg>
+              <svg cIcon [name]="getSortIcon('lastName')" size="sm" class="ms-1"></svg>            
             </th>
-            <th>Email</th>
-            <th>Téléphone</th>            <th 
-              class="sortable" 
-              (click)="sort('city')"
-              style="cursor: pointer;">
-              Ville 
-              <svg cIcon [name]="getSortIcon('city')" size="sm" class="ms-1"></svg>
-            </th>
-            <th>Date de naissance</th>
+            <th style="min-width: 120px;">Téléphone</th>
+            <th style="min-width: 120px;" class="d-none d-md-table-cell">Date de naissance</th>
             <th 
-              class="sortable" 
+              class="sortable d-none d-md-table-cell" 
               (click)="sort('startingDate')"
-              style="cursor: pointer;">
+              style="cursor: pointer; min-width: 140px;">
               Date d'inscription 
               <svg cIcon [name]="getSortIcon('startingDate')" size="sm" class="ms-1"></svg>
             </th>
-            <th>Statut</th>
-            <th class="text-center">Actions</th>
+            <th style="min-width: 80px;">Statut</th>
+            <th class="text-center" style="width: 60px;">Actions</th>
           </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let candidate of candidates; trackBy: trackByCin">
+        </thead>        <tbody>
+          <tr *ngFor="let candidate of candidates; trackBy: trackByCin">            
             <td class="fw-semibold">{{ candidate.cin }}</td>
             <td>{{ candidate.firstName }}</td>
             <td>{{ candidate.lastName }}</td>
-            <td>
-              <span *ngIf="candidate.email">{{ candidate.email }}</span>
-              <span *ngIf="!candidate.email" class="text-muted">-</span>
-            </td>
-            <td>{{ formatPhone(candidate.gsm) }}</td>            <td>
-              <span *ngIf="candidate.city">{{ candidate.city }}</span>
-              <span *ngIf="!candidate.city" class="text-muted">-</span>
-            </td>
-            <td>{{ formatDate(candidate.birthDay) }}</td>
-            <td>
-              <span *ngIf="candidate.startingDate">{{ formatDate(candidate.startingDate) }}</span>
+            <td class="text-nowrap">{{ formatPhone(candidate.gsm) }}</td>
+            <td class="d-none d-md-table-cell text-nowrap">{{ formatDate(candidate.birthDay) }}</td>
+            <td class="d-none d-md-table-cell">
+              <span *ngIf="candidate.startingDate" class="text-nowrap">{{ formatDate(candidate.startingDate) }}</span>
               <span *ngIf="!candidate.startingDate" class="text-muted">-</span>
             </td>
             <td>
@@ -211,16 +155,17 @@
                 <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false">
                   <svg cIcon name="cilOptions"></svg>
                 </button>
-                <ul cDropdownMenu>                  <li>
+                <ul cDropdownMenu>                  
+                  <li>
                     <button cDropdownItem (click)="openEditCandidateModal(candidate)">
                       <svg cIcon name="cilPencil" class="me-2"></svg>
                       Modifier
                     </button>
                   </li>
                   <li>
-                    <button cDropdownItem>
-                      <svg cIcon name="cilInfo" class="me-2"></svg>
-                      Voir détails
+                    <button cDropdownItem (click)="viewCandidateDetails(candidate)">
+                        <svg cIcon name="cilInfo" class="me-2"></svg>
+                        Voir détails
                     </button>
                   </li>
                   <li><hr cDropdownDivider /></li>
@@ -303,11 +248,12 @@
             type="button">
             <svg cIcon name="cilMediaSkipForward"></svg>
           </button>
-        </li>
-      </ul>
+        </li>      </ul>
     </nav>
   </c-card-body>
 </c-card>
+</div>
+<!-- End Main Content Container -->
 
 <!-- Add Candidate Modal -->
 <c-modal 

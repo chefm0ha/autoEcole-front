@@ -1,0 +1,637 @@
+<!-- Main Content Container -->
+<div class="container-fluid px-2 px-md-4">
+  <!-- Header -->
+  <div class="mb-4">    <!-- Return Button -->
+    <div class="mb-3">
+      <button 
+        cButton 
+        color="ghost" 
+        (click)="goBack()" 
+        class="d-flex align-items-center">
+        <svg cIcon name="cilArrowLeft" class="me-2"></svg>
+        Retour
+      </button>
+    </div>
+    
+    <!-- Title with Status Badge -->
+    <div class="d-flex align-items-center gap-2">
+      <h4 class="mb-0">
+        <svg cIcon name="cilUser" class="me-2"></svg>
+        Détails du candidat
+      </h4>
+      <c-badge [color]="candidate.isActive ? 'success' : 'secondary'" *ngIf="candidate">
+        {{ candidate.isActive ? 'Actif' : 'Inactif' }}
+      </c-badge>
+    </div>
+  </div>
+
+<!-- Loading -->
+<div *ngIf="loading" class="text-center p-5">
+  <c-spinner aria-hidden="true"></c-spinner>
+  <p class="mt-2 text-muted">Chargement des détails...</p>
+</div>
+
+<!-- Success Alert -->
+<c-alert *ngIf="success" color="success" [dismissible]="true" class="mb-4">
+  <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+  {{ success }}
+</c-alert>
+
+<!-- Error Alert -->
+<c-alert *ngIf="error" color="danger" [dismissible]="true" class="mb-4">
+  <svg cIcon name="cilWarning" class="me-2"></svg>
+  {{ error }}
+</c-alert>
+
+<!-- Content -->
+<div *ngIf="!loading && candidate">
+  <c-row class="g-4">
+    
+    <!-- Personal Information -->
+    <c-col [lg]="12">
+      <c-card class="h-100">
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <svg cIcon name="cilInfo" class="me-2"></svg>
+            Informations personnelles
+          </h5>
+        </c-card-header>
+        <c-card-body>
+          <c-row class="g-3">
+            <c-col [md]="6">
+              <strong>CIN:</strong><br>
+              <span class="text-primary fw-semibold">{{ candidate.cin }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Sexe:</strong><br>
+              <span>{{ candidate.gender === 'M' ? 'Homme' : 'Femme' }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Prénom:</strong><br>
+              <span>{{ candidate.firstName }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Nom:</strong><br>
+              <span>{{ candidate.lastName }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Date de naissance:</strong><br>
+              <span>{{ formatDate(candidate.birthDay) }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Lieu de naissance:</strong><br>
+              <span>{{ candidate.birthPlace || '-' }}</span>
+            </c-col>
+            <c-col [md]="12">
+              <strong>Adresse:</strong><br>
+              <span>{{ candidate.address || '-' }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Ville:</strong><br>
+              <span>{{ candidate.city || '-' }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Date d'inscription:</strong><br>
+              <span>{{ candidate.startingDate ? formatDate(candidate.startingDate) : '-' }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Email:</strong><br>
+              <span>{{ candidate.email || '-' }}</span>
+            </c-col>
+            <c-col [md]="6">
+              <strong>Téléphone:</strong><br>
+              <span>{{ formatPhone(candidate.gsm) }}</span>
+            </c-col>
+          </c-row>
+        </c-card-body>
+      </c-card>    </c-col>    
+    <!-- Payment Information -->
+    <c-col [lg]="12">
+      <c-card class="h-100">
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <svg cIcon name="cilCreditCard" class="me-2"></svg>
+            Statut de paiement
+          </h5>
+          <button cButton color="success" size="sm" (click)="openPaymentModal()">
+            <svg cIcon name="cilPlus" class="me-1"></svg>
+            Ajouter paiement
+          </button>
+        </c-card-header>
+        <c-card-body>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span>Progression du paiement</span>
+              <span class="fw-semibold">{{ payment.paidAmount }} / {{ payment.totalAmount }} MAD</span>
+            </div>            <c-progress class="mb-2">
+              <c-progress-bar [value]="getPaymentProgress()" [color]="payment.status === 'PAID' ? 'success' : 'warning'"></c-progress-bar>
+            </c-progress>
+            <c-badge [color]="payment.status === 'PAID' ? 'success' : payment.status === 'PARTIAL' ? 'warning' : 'secondary'">
+              {{ payment.status === 'PAID' ? 'Payé' : payment.status === 'PARTIAL' ? 'Partiel' : 'En attente' }}
+            </c-badge>
+          </div>
+          
+          <h6 class="mb-3">Échéanciers</h6>          <div class="table-responsive">
+            <table cTable class="table-sm">
+              <thead>
+                <tr>
+                  <th style="min-width: 40px;">N°</th>
+                  <th style="min-width: 80px;">Montant</th>
+                  <th style="min-width: 100px;">Date</th>
+                  <th style="min-width: 100px;">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let installment of payment.installments">
+                  <td>{{ installment.installmentNumber }}</td>
+                  <td class="text-nowrap">{{ installment.amount }} MAD</td>
+                  <td class="text-nowrap">{{ formatDate(installment.date) }}</td>
+                  <td>
+                    <c-badge 
+                      [color]="installment.status === 'PAID' ? 'success' : installment.status === 'OVERDUE' ? 'danger' : 'secondary'"
+                      size="sm"
+                      class="text-nowrap">
+                      {{ installment.status === 'PAID' ? 'Payé' : installment.status === 'OVERDUE' ? 'En retard' : 'En attente' }}
+                    </c-badge>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+
+    <!-- Application Files -->
+    <c-col [lg]="12">
+      <c-card>
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <svg cIcon name="cilFolder" class="me-2"></svg>
+            Dossiers de candidature
+          </h5>
+          <button 
+            cButton 
+            color="primary" 
+            size="sm" 
+            (click)="openApplicationFileModal()"
+            *ngIf="applicationFiles.length === 0 || getCategories().length < categories.length">
+            <svg cIcon name="cilPlus" class="me-1"></svg>
+            Ajouter dossier
+          </button>
+        </c-card-header>
+        <c-card-body>
+          <div *ngIf="applicationFiles.length === 0; else hasApplicationFiles">
+            <div class="text-center p-5">
+              <svg cIcon name="cilFolder" size="3xl" class="text-muted mb-3"></svg>
+              <h6 class="text-muted mb-3">Aucun dossier de candidature</h6>
+              <p class="text-muted mb-3">Ce candidat n'a pas encore de dossier de candidature.</p>
+              <button cButton color="primary" (click)="openApplicationFileModal()">
+                <svg cIcon name="cilPlus" class="me-2"></svg>
+                Créer un dossier
+              </button>
+            </div>
+          </div>            <ng-template #hasApplicationFiles>
+            <c-tabs [activeItemKey]="activeTab" (activeItemKeyChange)="onTabChange($event)">
+              <c-tabs-list variant="tabs">
+                <button 
+                  cTab 
+                  *ngFor="let category of getCategories()"
+                  [itemKey]="category">
+                  <svg cIcon name="cilFile" class="me-2"></svg>
+                  Catégorie {{ category }}
+                  <c-badge color="info" class="ms-2">{{ getApplicationFilesByCategory(category).length }}</c-badge>
+                </button>
+              </c-tabs-list>
+              
+              <c-tabs-content>                <c-tab-panel 
+                  *ngFor="let category of getCategories()" 
+                  [itemKey]="category"
+                  class="p-3">
+                  
+                  <div class="mt-4">                  <!-- Application Files for this category -->
+                  <div class="row g-3 mb-4">
+                    <div *ngFor="let file of getApplicationFilesByCategory(category)" class="col-12 col-md-6 col-xl-4">
+                      <c-card [class]="'border-' + (file.status === 'ACTIVE' ? 'success' : 'secondary') + ' h-100'">
+                        <c-card-body class="d-flex flex-column">
+                          <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="mb-0">Dossier #{{ file.id }}</h6>
+                            <c-badge [color]="file.status === 'ACTIVE' ? 'success' : 'secondary'">
+                              {{ file.status === 'ACTIVE' ? 'Actif' : 'Expiré' }}
+                            </c-badge>
+                          </div>
+                          
+                          <p class="text-muted small mb-2">
+                            Créé le {{ formatDate(file.startingDate) }}
+                          </p>
+                          
+                          <div class="row g-2 mb-3 flex-grow-1">
+                            <div class="col-6">
+                              <small class="text-muted">Heures théoriques</small>
+                              <div class="fw-semibold">{{ file.theoreticalHoursCompleted }}/20h</div>                              <c-progress size="xs">
+                                <c-progress-bar 
+                                  [value]="(file.theoreticalHoursCompleted / 20) * 100" 
+                                  [color]="file.theoreticalHoursCompleted >= 20 ? 'success' : 'info'">
+                                </c-progress-bar>
+                              </c-progress>
+                            </div>
+                            <div class="col-6">
+                              <small class="text-muted">Heures pratiques</small>
+                              <div class="fw-semibold">{{ file.practicalHoursCompleted }}/20h</div>                              <c-progress size="xs">
+                                <c-progress-bar 
+                                  [value]="(file.practicalHoursCompleted / 20) * 100" 
+                                  [color]="file.practicalHoursCompleted >= 20 ? 'success' : 'info'">
+                                </c-progress-bar>
+                              </c-progress>
+                            </div>
+                          </div>
+                          
+                          <div class="d-flex justify-content-between text-sm mt-auto">
+                            <span>Total: {{ file.totalAmount }} MAD</span>
+                            <span>Payé: {{ file.paidAmount }} MAD</span>
+                          </div>
+                        </c-card-body>
+                      </c-card>
+                    </div>
+                  </div>
+
+                  <!-- Exams section for this category -->
+                  <div class="border-top pt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0">
+                        <svg cIcon name="cilTask" class="me-2"></svg>
+                        Examens - Catégorie {{ category }}
+                      </h6>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">
+                          {{ getRemainingAttempts(category) }} tentative(s) restante(s)
+                        </span>
+                        <button 
+                          cButton 
+                          color="warning" 
+                          size="sm" 
+                          (click)="openExamModal(category)"
+                          [disabled]="!isEligibleForExams(category) || getRemainingAttempts(category) === 0">
+                          <svg cIcon name="cilPlus" class="me-1"></svg>
+                          Ajouter examen
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div *ngIf="!isEligibleForExams(category)" class="alert alert-warning">
+                      <svg cIcon name="cilWarning" class="me-2"></svg>
+                      Le candidat doit compléter 20 heures de théorie et 20 heures de pratique pour être éligible aux examens.
+                    </div>
+                    
+                    <div *ngIf="getExamsByCategory(category).length === 0; else hasExams" class="text-center p-3 bg-light rounded">
+                      <svg cIcon name="cilTask" size="2xl" class="text-muted mb-2"></svg>
+                      <p class="text-muted mb-0">Aucun examen programmé pour cette catégorie</p>
+                    </div>
+                      <ng-template #hasExams>
+                      <div class="table-responsive">
+                        <table cTable [hover]="true" class="table-sm">
+                          <thead>
+                            <tr>
+                              <th style="min-width: 100px;">Type</th>
+                              <th style="min-width: 80px;">Tent.</th>
+                              <th style="min-width: 100px;">Date</th>
+                              <th style="min-width: 100px;">Statut</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let exam of getExamsByCategory(category)">
+                              <td>
+                                <c-badge [color]="exam.examType === 'THEORETICAL' ? 'info' : 'primary'" class="text-nowrap">
+                                  {{ exam.examType === 'THEORETICAL' ? 'Théorique' : 'Pratique' }}
+                                </c-badge>
+                              </td>
+                              <td>{{ exam.attemptNumber }}</td>
+                              <td class="text-nowrap">{{ formatDate(exam.date) }}</td>
+                              <td>
+                                <c-badge 
+                                  [color]="exam.status === 'PASSED' ? 'success' : exam.status === 'FAILED' ? 'danger' : 'warning'"
+                                  class="text-nowrap">
+                                  {{ exam.status === 'PASSED' ? 'Réussi' : exam.status === 'FAILED' ? 'Échoué' : 'Programmé' }}
+                                </c-badge>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div></ng-template>
+                  </div>
+                  </div>
+                </c-tab-panel>
+              </c-tabs-content>
+            </c-tabs>
+          </ng-template>
+        </c-card-body>
+      </c-card>    </c-col>
+  </c-row>
+</div>
+<!-- End Main Content Container -->
+
+<!-- MODALS START HERE -->
+
+<!-- Application File Modal -->
+<c-modal 
+  [visible]="showApplicationFileModal" 
+  (visibleChange)="showApplicationFileModal = $event"
+  [keyboard]="false"
+  [backdrop]="'static'">
+  <c-modal-header>
+    <h4 cModalTitle>
+      <svg cIcon name="cilFolder" class="me-2"></svg>
+      Créer un dossier de candidature
+    </h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="closeApplicationFileModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    <c-alert *ngIf="success" color="success" [dismissible]="true">
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      {{ success }}
+    </c-alert>
+
+    <c-alert *ngIf="error" color="danger" [dismissible]="true">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error }}
+    </c-alert>
+
+    <form [formGroup]="applicationFileForm" cForm>
+      <c-row class="g-3">
+        <c-col [md]="12">
+          <label cLabel for="category">Catégorie *</label>
+          <select 
+            cSelect 
+            id="category" 
+            formControlName="category"
+            [class.is-invalid]="isFieldInvalid(applicationFileForm, 'category')">
+            <option value="">Choisir une catégorie...</option>
+            <option *ngFor="let cat of categories" [value]="cat.code">
+              {{ cat.code }} - {{ cat.description }}
+            </option>
+          </select>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(applicationFileForm, 'category')" 
+            [valid]="false">
+            {{ getFieldError(applicationFileForm, 'category') }}
+          </c-form-feedback>
+        </c-col>
+        
+        <c-col [md]="6">
+          <label cLabel for="totalAmount">Montant total *</label>
+          <c-input-group>
+            <input 
+              cFormControl 
+              id="totalAmount" 
+              type="number" 
+              formControlName="totalAmount"
+              placeholder="0"
+              [class.is-invalid]="isFieldInvalid(applicationFileForm, 'totalAmount')">
+            <span cInputGroupText>MAD</span>
+          </c-input-group>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(applicationFileForm, 'totalAmount')" 
+            [valid]="false">
+            {{ getFieldError(applicationFileForm, 'totalAmount') }}
+          </c-form-feedback>
+        </c-col>
+        
+        <c-col [md]="6">
+          <label cLabel for="paidAmount">Montant payé *</label>
+          <c-input-group>
+            <input 
+              cFormControl 
+              id="paidAmount" 
+              type="number" 
+              formControlName="paidAmount"
+              placeholder="0"
+              [class.is-invalid]="isFieldInvalid(applicationFileForm, 'paidAmount')">
+            <span cInputGroupText>MAD</span>
+          </c-input-group>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(applicationFileForm, 'paidAmount')" 
+            [valid]="false">
+            {{ getFieldError(applicationFileForm, 'paidAmount') }}
+          </c-form-feedback>
+        </c-col>
+      </c-row>
+    </form>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closeApplicationFileModal()">
+      Annuler
+    </button>
+    <button 
+      cButton 
+      color="primary" 
+      (click)="onSubmitApplicationFile()">
+      Créer le dossier
+    </button>
+  </c-modal-footer>
+</c-modal>
+<!-- Exam Modal -->
+<c-modal 
+  [visible]="showExamModal" 
+  (visibleChange)="showExamModal = $event"
+  [keyboard]="false"
+  [backdrop]="'static'">
+  <c-modal-header>
+    <h4 cModalTitle>
+      <svg cIcon name="cilTask" class="me-2"></svg>
+      Ajouter un examen
+    </h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="closeExamModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    <c-alert *ngIf="success" color="success" [dismissible]="true">
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      {{ success }}
+    </c-alert>
+
+    <c-alert *ngIf="error" color="danger" [dismissible]="true">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error }}
+    </c-alert>
+
+    <form [formGroup]="examForm" cForm>
+      <c-row class="g-3">
+        <c-col [md]="6">
+          <label cLabel for="examType">Type d'examen *</label>
+          <select 
+            cSelect 
+            id="examType" 
+            formControlName="examType"
+            [class.is-invalid]="isFieldInvalid(examForm, 'examType')">
+            <option value="">Choisir...</option>
+            <option value="THEORETICAL">Théorique</option>
+            <option value="PRACTICAL">Pratique</option>
+          </select>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(examForm, 'examType')" 
+            [valid]="false">
+            {{ getFieldError(examForm, 'examType') }}
+          </c-form-feedback>
+        </c-col>
+        
+        <c-col [md]="6">
+          <label cLabel for="examCategory">Catégorie</label>
+          <input 
+            cFormControl 
+            id="examCategory" 
+            formControlName="category"
+            readonly>
+        </c-col>
+        
+        <c-col [md]="6">
+          <label cLabel for="examDate">Date *</label>
+          <input 
+            cFormControl 
+            id="examDate" 
+            type="date" 
+            formControlName="date"
+            [class.is-invalid]="isFieldInvalid(examForm, 'date')">
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(examForm, 'date')" 
+            [valid]="false">
+            {{ getFieldError(examForm, 'date') }}
+          </c-form-feedback>
+        </c-col>
+        
+        <c-col [md]="6">
+          <label cLabel for="examStatus">Statut *</label>
+          <select 
+            cSelect 
+            id="examStatus" 
+            formControlName="status"
+            [class.is-invalid]="isFieldInvalid(examForm, 'status')">
+            <option value="">Choisir...</option>
+            <option value="SCHEDULED">Programmé</option>
+            <option value="PASSED">Réussi</option>
+            <option value="FAILED">Échoué</option>
+          </select>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(examForm, 'status')" 
+            [valid]="false">
+            {{ getFieldError(examForm, 'status') }}
+          </c-form-feedback>
+        </c-col>
+      </c-row>
+    </form>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closeExamModal()">
+      Annuler
+    </button>
+    <button 
+      cButton 
+      color="primary" 
+      (click)="onSubmitExam()">
+      Ajouter l'examen
+    </button>
+  </c-modal-footer>
+</c-modal>
+
+<!-- Payment Modal -->
+<c-modal 
+  [visible]="showPaymentModal" 
+  (visibleChange)="showPaymentModal = $event"
+  [keyboard]="false"
+  [backdrop]="'static'">
+  <c-modal-header>
+    <h4 cModalTitle>
+      <svg cIcon name="cilCreditCard" class="me-2"></svg>
+      Ajouter un paiement
+    </h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="closePaymentModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    <c-alert *ngIf="success" color="success" [dismissible]="true">
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      {{ success }}
+    </c-alert>
+
+    <c-alert *ngIf="error" color="danger" [dismissible]="true">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error }}
+    </c-alert>
+
+    <form [formGroup]="paymentForm" cForm>
+      <c-row class="g-3">
+        <c-col [md]="6">
+          <label cLabel for="paymentAmount">Montant *</label>
+          <c-input-group>
+            <input 
+              cFormControl 
+              id="paymentAmount" 
+              type="number" 
+              formControlName="amount"
+              placeholder="0"
+              [class.is-invalid]="isFieldInvalid(paymentForm, 'amount')">
+            <span cInputGroupText>MAD</span>
+          </c-input-group>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(paymentForm, 'amount')" 
+            [valid]="false">
+            {{ getFieldError(paymentForm, 'amount') }}
+          </c-form-feedback>
+        </c-col>
+        
+        <c-col [md]="6">
+          <label cLabel for="paymentDate">Date *</label>
+          <input 
+            cFormControl 
+            id="paymentDate" 
+            type="date" 
+            formControlName="date"
+            [class.is-invalid]="isFieldInvalid(paymentForm, 'date')">
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(paymentForm, 'date')" 
+            [valid]="false">
+            {{ getFieldError(paymentForm, 'date') }}
+          </c-form-feedback>
+        </c-col>
+      </c-row>
+    </form>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closePaymentModal()">
+      Annuler
+    </button>
+    <button 
+      cButton 
+      color="primary" 
+      (click)="onSubmitPayment()">
+      Enregistrer le paiement
+    </button>
+  </c-modal-footer>
+</c-modal>

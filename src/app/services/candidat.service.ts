@@ -9,28 +9,9 @@ import { Candidate, CandidateListDTO, CandidateSearchDTO, PageableResponse } fro
 })
 export class CandidateService {
   private apiUrl = 'http://localhost:9090/candidate';
-
   constructor(private http: HttpClient) { }
-  // Get all candidates with pagination (optimized response)
+  // Get all active candidates with pagination (optimized response)
   getAllCandidates(
-    page: number = 0,
-    size: number = 10,
-    sortBy: string = 'lastName',
-    sortDirection: string = 'asc'
-  ): Observable<PageableResponse<CandidateListDTO>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString())
-      .set('sortBy', sortBy)
-      .set('sortDirection', sortDirection);
-
-    return this.http.get<PageableResponse<CandidateListDTO>>(`${this.apiUrl}/getAllCandidates`, { 
-      params,
-      withCredentials: true 
-    }).pipe(catchError(this.handleError));
-  }
-  // Get active candidates with pagination (optimized response)
-  getActiveCandidates(
     page: number = 0,
     size: number = 10,
     sortBy: string = 'lastName',
@@ -73,12 +54,6 @@ export class CandidateService {
     }
     if (searchCriteria.isActive !== undefined) {
       params = params.set('isActive', searchCriteria.isActive.toString());
-    }
-    if (searchCriteria.city) {
-      params = params.set('city', searchCriteria.city);
-    }
-    if (searchCriteria.email) {
-      params = params.set('email', searchCriteria.email);
     }
 
     return this.http.get<PageableResponse<CandidateListDTO>>(`${this.apiUrl}/search`, { 
