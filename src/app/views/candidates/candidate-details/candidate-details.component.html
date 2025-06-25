@@ -102,230 +102,381 @@
               <strong>Téléphone:</strong><br>
               <span>{{ formatPhone(candidate.gsm) }}</span>
             </c-col>
-          </c-row>
-        </c-card-body>
-      </c-card>    </c-col>    
-    <!-- Payment Information -->
-    <c-col [lg]="12">
-      <c-card class="h-100">
-        <c-card-header class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">
-            <svg cIcon name="cilCreditCard" class="me-2"></svg>
-            Statut de paiement
-          </h5>
-          <button cButton color="success" size="sm" (click)="openPaymentModal()">
-            <svg cIcon name="cilPlus" class="me-1"></svg>
-            Ajouter paiement
-          </button>
-        </c-card-header>
-        <c-card-body>
-          <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span>Progression du paiement</span>
-              <span class="fw-semibold">{{ payment.paidAmount }} / {{ payment.totalAmount }} MAD</span>
-            </div>            <c-progress class="mb-2">
-              <c-progress-bar [value]="getPaymentProgress()" [color]="payment.status === 'PAID' ? 'success' : 'warning'"></c-progress-bar>
-            </c-progress>
-            <c-badge [color]="payment.status === 'PAID' ? 'success' : payment.status === 'PARTIAL' ? 'warning' : 'secondary'">
-              {{ payment.status === 'PAID' ? 'Payé' : payment.status === 'PARTIAL' ? 'Partiel' : 'En attente' }}
-            </c-badge>
-          </div>
-          
-          <h6 class="mb-3">Échéanciers</h6>          <div class="table-responsive">
-            <table cTable class="table-sm">
-              <thead>
-                <tr>
-                  <th style="min-width: 40px;">N°</th>
-                  <th style="min-width: 80px;">Montant</th>
-                  <th style="min-width: 100px;">Date</th>
-                  <th style="min-width: 100px;">Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let installment of payment.installments">
-                  <td>{{ installment.installmentNumber }}</td>
-                  <td class="text-nowrap">{{ installment.amount }} MAD</td>
-                  <td class="text-nowrap">{{ formatDate(installment.date) }}</td>
-                  <td>
-                    <c-badge 
-                      [color]="installment.status === 'PAID' ? 'success' : installment.status === 'OVERDUE' ? 'danger' : 'secondary'"
-                      size="sm"
-                      class="text-nowrap">
-                      {{ installment.status === 'PAID' ? 'Payé' : installment.status === 'OVERDUE' ? 'En retard' : 'En attente' }}
-                    </c-badge>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </c-card-body>
-      </c-card>
-    </c-col>
-
+          </c-row>        </c-card-body>
+      </c-card>    </c-col>
     <!-- Application Files -->
     <c-col [lg]="12">
       <c-card>
         <c-card-header class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">
-            <svg cIcon name="cilFolder" class="me-2"></svg>
-            Dossiers de candidature
-          </h5>
-          <button 
-            cButton 
-            color="primary" 
-            size="sm" 
-            (click)="openApplicationFileModal()"
-            *ngIf="applicationFiles.length === 0 || getCategories().length < categories.length">
-            <svg cIcon name="cilPlus" class="me-1"></svg>
-            Ajouter dossier
-          </button>
-        </c-card-header>
-        <c-card-body>
-          <div *ngIf="applicationFiles.length === 0; else hasApplicationFiles">
-            <div class="text-center p-5">
-              <svg cIcon name="cilFolder" size="3xl" class="text-muted mb-3"></svg>
-              <h6 class="text-muted mb-3">Aucun dossier de candidature</h6>
-              <p class="text-muted mb-3">Ce candidat n'a pas encore de dossier de candidature.</p>
-              <button cButton color="primary" (click)="openApplicationFileModal()">
-                <svg cIcon name="cilPlus" class="me-2"></svg>
-                Créer un dossier
-              </button>
-            </div>
-          </div>            <ng-template #hasApplicationFiles>
-            <c-tabs [activeItemKey]="activeTab" (activeItemKeyChange)="onTabChange($event)">
-              <c-tabs-list variant="tabs">
-                <button 
-                  cTab 
-                  *ngFor="let category of getCategories()"
-                  [itemKey]="category">
-                  <svg cIcon name="cilFile" class="me-2"></svg>
-                  Catégorie {{ category }}
-                  <c-badge color="info" class="ms-2">{{ getApplicationFilesByCategory(category).length }}</c-badge>
+          <div class="d-flex align-items-center gap-3">
+            <h5 class="mb-0">
+              <svg cIcon name="cilFolder" class="me-2"></svg>
+              {{ showArchive ? 'Archives des dossiers' : 'Dossiers de candidature' }}
+            </h5>
+            <c-badge color="info" *ngIf="!showArchive">{{ applicationFiles.length }} actif(s)</c-badge>
+            <c-badge color="secondary" *ngIf="showArchive">{{ archivedApplicationFiles.length }} archivé(s)</c-badge>
+          </div>
+          <div class="d-flex gap-2">
+            <button 
+              cButton 
+              [color]="showArchive ? 'secondary' : 'ghost'"
+              size="sm"
+              (click)="toggleArchive()"
+              *ngIf="archivedApplicationFiles.length > 0">
+              <svg cIcon name="cilHistory" class="me-1"></svg>
+              {{ showArchive ? 'Voir actifs' : 'Voir archives' }}
+            </button>
+            <button 
+              cButton 
+              color="primary" 
+              size="sm" 
+              (click)="openApplicationFileModal()"
+              *ngIf="!showArchive && (applicationFiles.length === 0 || getCategories().length < categories.length)">
+              <svg cIcon name="cilPlus" class="me-1"></svg>
+              Ajouter dossier
+            </button>
+          </div>
+        </c-card-header>        <c-card-body>
+          <!-- Active Application Files -->
+          <div *ngIf="!showArchive">
+            <div *ngIf="applicationFiles.length === 0; else hasApplicationFiles">
+              <div class="text-center p-5">
+                <svg cIcon name="cilFolder" size="3xl" class="text-muted mb-3"></svg>
+                <h6 class="text-muted mb-3">Aucun dossier de candidature</h6>
+                <p class="text-muted mb-3">Ce candidat n'a pas encore de dossier de candidature.</p>
+                <button cButton color="primary" (click)="openApplicationFileModal()">
+                  <svg cIcon name="cilPlus" class="me-2"></svg>
+                  Créer un dossier
                 </button>
-              </c-tabs-list>
-              
-              <c-tabs-content>                <c-tab-panel 
-                  *ngFor="let category of getCategories()" 
-                  [itemKey]="category"
-                  class="p-3">
-                  
-                  <div class="mt-4">                  <!-- Application Files for this category -->
-                  <div class="row g-3 mb-4">
-                    <div *ngFor="let file of getApplicationFilesByCategory(category)" class="col-12 col-md-6 col-xl-4">
-                      <c-card [class]="'border-' + (file.status === 'ACTIVE' ? 'success' : 'secondary') + ' h-100'">
-                        <c-card-body class="d-flex flex-column">
-                          <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h6 class="mb-0">Dossier #{{ file.id }}</h6>
-                            <c-badge [color]="file.status === 'ACTIVE' ? 'success' : 'secondary'">
-                              {{ file.status === 'ACTIVE' ? 'Actif' : 'Expiré' }}
-                            </c-badge>
+              </div>
+            </div>            <ng-template #hasApplicationFiles>
+              <c-tabs [activeItemKey]="activeTab" (activeItemKeyChange)="onTabChange($event)">
+                <c-tabs-list variant="tabs">                  <button 
+                    cTab 
+                    *ngFor="let category of getCategories()"
+                    [itemKey]="category">
+                    <svg cIcon name="cilFile" class="me-2"></svg>
+                    Catégorie {{ category }}
+                  </button>
+                </c-tabs-list>
+                
+                <c-tabs-content>                  <c-tab-panel 
+                    *ngFor="let category of getCategories()" 
+                    [itemKey]="category"
+                    class="p-3">
+                      <div class="mt-4">
+                    <!-- Application Files for this category -->
+                    <div *ngFor="let file of getApplicationFilesByCategory(category)" class="mb-5">                      <!-- Application File Basic Info -->
+                      <div class="border rounded p-4 mb-4" [class]="'border-' + (file.status === 'ACTIVE' ? 'success' : 'secondary')">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                          <div>
+                            <h6 class="mb-1">{{ file.fileNumber || 'Dossier #' + file.id }}</h6>
+                            <p class="text-muted small mb-0">Créé le {{ formatDate(file.startingDate) }}</p>
                           </div>
-                          
-                          <p class="text-muted small mb-2">
-                            Créé le {{ formatDate(file.startingDate) }}
-                          </p>
-                          
-                          <div class="row g-2 mb-3 flex-grow-1">
-                            <div class="col-6">
-                              <small class="text-muted">Heures théoriques</small>
-                              <div class="fw-semibold">{{ file.theoreticalHoursCompleted }}/20h</div>                              <c-progress size="xs">
-                                <c-progress-bar 
-                                  [value]="(file.theoreticalHoursCompleted / 20) * 100" 
-                                  [color]="file.theoreticalHoursCompleted >= 20 ? 'success' : 'info'">
-                                </c-progress-bar>
-                              </c-progress>
+                          <c-badge [color]="file.status === 'ACTIVE' ? 'success' : 'secondary'">
+                            {{ file.status === 'ACTIVE' ? 'Actif' : 'Expiré' }}
+                          </c-badge>
+                        </div>
+                        
+                        <div class="row g-3">
+                          <div class="col-md-2">
+                            <small class="text-muted">Heures théoriques</small>
+                            <div class="fw-semibold">{{ file.theoreticalHoursCompleted }}/20h</div>
+                            <c-progress size="xs">
+                              <c-progress-bar 
+                                [value]="(file.theoreticalHoursCompleted / 20) * 100" 
+                                [color]="file.theoreticalHoursCompleted >= 20 ? 'success' : 'info'">
+                              </c-progress-bar>
+                            </c-progress>
+                          </div>
+                          <div class="col-md-2">
+                            <small class="text-muted">Heures pratiques</small>
+                            <div class="fw-semibold">{{ file.practicalHoursCompleted }}/20h</div>
+                            <c-progress size="xs">
+                              <c-progress-bar 
+                                [value]="(file.practicalHoursCompleted / 20) * 100" 
+                                [color]="file.practicalHoursCompleted >= 20 ? 'success' : 'info'">
+                              </c-progress-bar>
+                            </c-progress>
+                          </div>                          <div class="col-md-2">
+                            <small class="text-muted">Montant total</small>
+                            <div class="fw-semibold">{{ file.payment?.totalAmount || 0 }} MAD</div>
+                          </div>
+                          <div class="col-md-2">
+                            <small class="text-muted">Montant payé</small>
+                            <div class="fw-semibold">{{ file.payment?.paidAmount || 0 }} MAD</div>
+                          </div>
+                          <div class="col-md-2">
+                            <small class="text-muted">Timbre fiscal</small>
+                            <div class="fw-semibold">
+                              <c-badge [color]="file.taxStamp ? 'success' : 'danger'" size="sm">
+                                {{ file.taxStamp ? 'Payé' : 'Non payé' }}
+                              </c-badge>
                             </div>
-                            <div class="col-6">
-                              <small class="text-muted">Heures pratiques</small>
-                              <div class="fw-semibold">{{ file.practicalHoursCompleted }}/20h</div>                              <c-progress size="xs">
-                                <c-progress-bar 
-                                  [value]="(file.practicalHoursCompleted / 20) * 100" 
-                                  [color]="file.practicalHoursCompleted >= 20 ? 'success' : 'info'">
-                                </c-progress-bar>
-                              </c-progress>
+                          </div>
+                          <div class="col-md-2">
+                            <small class="text-muted">Visite médicale</small>                            <div class="fw-semibold">
+                              <c-badge 
+                                [color]="file.medicalVisit === 'COMPLETED' ? 'success' : file.medicalVisit === 'EXPIRED' ? 'danger' : file.medicalVisit === 'PENDING' ? 'warning' : 'danger'" 
+                                size="sm">
+                                {{ file.medicalVisit === 'COMPLETED' ? 'Validée' : file.medicalVisit === 'EXPIRED' ? 'Expirée' : file.medicalVisit === 'PENDING' ? 'En attente' : 'Pas encore demandé' }}
+                              </c-badge>
                             </div>
                           </div>
-                          
-                          <div class="d-flex justify-content-between text-sm mt-auto">
-                            <span>Total: {{ file.totalAmount }} MAD</span>
-                            <span>Payé: {{ file.paidAmount }} MAD</span>
-                          </div>
-                        </c-card-body>
-                      </c-card>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
-                  <!-- Exams section for this category -->
-                  <div class="border-top pt-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                      <h6 class="mb-0">
-                        <svg cIcon name="cilTask" class="me-2"></svg>
-                        Examens - Catégorie {{ category }}
-                      </h6>
-                      <div class="d-flex align-items-center gap-2">
-                        <span class="text-muted small">
-                          {{ getRemainingAttempts(category) }} tentative(s) restante(s)
-                        </span>
-                        <button 
-                          cButton 
-                          color="warning" 
-                          size="sm" 
-                          (click)="openExamModal(category)"
-                          [disabled]="!isEligibleForExams(category) || getRemainingAttempts(category) === 0">
-                          <svg cIcon name="cilPlus" class="me-1"></svg>
-                          Ajouter examen
-                        </button>
+                      <!-- Payment Section - Full Width -->
+                      <div class="border rounded p-4 mb-4 bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-3">                          <h6 class="mb-0">
+                            <svg cIcon name="cilCreditCard" class="me-2"></svg>
+                            Paiements - Dossier {{ file.fileNumber || '#' + file.id }}
+                          </h6><button 
+                            cButton 
+                            color="success" 
+                            size="sm" 
+                            (click)="openPaymentModal(file)"
+                            *ngIf="file.payment && file.payment.status !== 'COMPLETED'">
+                            <svg cIcon name="cilPlus" class="me-1"></svg>
+                            Ajouter paiement
+                          </button>
+                        </div>
+                        
+                        <div *ngIf="file.payment">
+                          <div class="row align-items-center mb-3">
+                            <div class="col-md-6">                              <div class="d-flex justify-content-between text-sm mb-2">
+                                <span>{{ file.payment.paidAmount }} / {{ file.payment.totalAmount }} MAD</span>
+                                <c-badge 
+                                  [color]="file.payment.status === 'COMPLETED' ? 'success' : file.payment.status === 'PENDING' ? 'warning' : 'secondary'"
+                                  size="sm">
+                                  {{ file.payment.status === 'COMPLETED' ? 'Payé' : file.payment.status === 'PENDING' ? 'Partiel' : 'Non payé' }}
+                                </c-badge>
+                              </div>
+                              <c-progress size="sm">
+                                <c-progress-bar 
+                                  [value]="getPaymentProgress(file)" 
+                                  [color]="file.payment.status === 'COMPLETED' ? 'success' : 'warning'">
+                                </c-progress-bar>
+                              </c-progress>
+                            </div>
+                          </div>
+                          
+                          <!-- Payment Installments -->
+                          <div *ngIf="file.payment.installments.length > 0">
+                            <h6 class="mb-2">Échéanciers ({{ file.payment.installments.length }})</h6>
+                            <div class="row g-2">                              <div *ngFor="let installment of file.payment.installments" class="col-sm-6 col-md-4 col-lg-3">
+                                <div class="p-3 border rounded text-center bg-success-subtle border-success">
+                                  <div class="fw-semibold">{{ installment.amount }} MAD</div>
+                                  <small class="text-muted">{{ formatDate(installment.date) }}</small>
+                                  <div class="mt-1">
+                                    <c-badge color="success" size="sm">
+                                      Échéance {{ installment.installmentNumber }}
+                                    </c-badge>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div *ngIf="!file.payment" class="text-center p-4 border border-dashed rounded">
+                          <svg cIcon name="cilCreditCard" size="2xl" class="text-muted mb-2"></svg>
+                          <div class="text-muted">Aucun paiement enregistré</div>
+                        </div>
+                      </div>
+
+                      <!-- Exams Section - Full Width -->
+                      <div class="border rounded p-4 mb-4 bg-light">                        <div class="d-flex justify-content-between align-items-center mb-3">                          <h6 class="mb-0">
+                            <svg cIcon name="cilTask" class="me-2"></svg>
+                            Examens - Dossier {{ file.fileNumber || '#' + file.id }}
+                          </h6>
+                          <button 
+                            cButton 
+                            color="warning" 
+                            size="sm" 
+                            (click)="openExamModal(file.category, file)"
+                            [disabled]="!isApplicationFileEligibleForExams(file) || getApplicationFileRemainingAttempts(file) === 0">
+                            <svg cIcon name="cilPlus" class="me-1"></svg>
+                            Ajouter examen
+                          </button>
+                        </div>
+                        
+                        <div *ngIf="!isApplicationFileEligibleForExams(file)" class="alert alert-warning mb-3">
+                          <svg cIcon name="cilWarning" class="me-2"></svg>
+                          20h de théorie et 20h de pratique requises pour les examens
+                        </div>
+                        
+                        <div *ngIf="file.exams && file.exams.length > 0; else noExams">
+                          <div class="row g-3">
+                            <div *ngFor="let exam of file.exams" class="col-sm-6 col-lg-4">
+                              <div class="border rounded p-3" 
+                                   [class.border-success]="exam.status === 'PASSED'"
+                                   [class.bg-success-subtle]="exam.status === 'PASSED'"
+                                   [class.border-danger]="exam.status === 'FAILED'"
+                                   [class.bg-danger-subtle]="exam.status === 'FAILED'"
+                                   [class.border-warning]="exam.status === 'SCHEDULED'"
+                                   [class.bg-warning-subtle]="exam.status === 'SCHEDULED'">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                  <c-badge 
+                                    [color]="exam.examType === 'THEORETICAL' ? 'info' : 'primary'" 
+                                    size="sm">
+                                    {{ exam.examType === 'THEORETICAL' ? 'Théorique' : 'Pratique' }}
+                                  </c-badge>
+                                  <c-badge 
+                                    [color]="exam.status === 'PASSED' ? 'success' : exam.status === 'FAILED' ? 'danger' : 'warning'"
+                                    size="sm">
+                                    {{ exam.status === 'PASSED' ? 'Réussi' : exam.status === 'FAILED' ? 'Échoué' : 'Programmé' }}
+                                  </c-badge>
+                                </div>                                <div class="text-center">
+                                  <div class="fw-semibold">{{ formatDate(exam.date) }}</div>
+                                </div>
+                              </div>
+                            </div>                          </div>
+                        </div>
+                        
+                        <ng-template #noExams>
+                          <div class="text-center p-4 border border-dashed rounded">
+                            <svg cIcon name="cilTask" size="2xl" class="text-muted mb-2"></svg>
+                            <div class="text-muted">Aucun examen programmé</div>
+                          </div>
+                        </ng-template>
+                      </div>
+                    </div></div>
+                  </c-tab-panel>
+                </c-tabs-content>
+              </c-tabs>
+            </ng-template>
+          </div>
+
+          <!-- Archive Section -->
+          <div *ngIf="showArchive">
+            <div *ngIf="archivedApplicationFiles.length === 0" class="text-center p-5">
+              <svg cIcon name="cilHistory" size="3xl" class="text-muted mb-3"></svg>
+              <h6 class="text-muted mb-3">Aucun dossier archivé</h6>
+              <p class="text-muted mb-0">Tous les dossiers expirés apparaîtront ici.</p>
+            </div>
+            
+            <div *ngIf="archivedApplicationFiles.length > 0">
+              <c-tabs [activeItemKey]="activeTab" (activeItemKeyChange)="onTabChange($event)">
+                <c-tabs-list variant="tabs">
+                  <button 
+                    cTab 
+                    *ngFor="let category of getArchivedCategories()"
+                    [itemKey]="category">
+                    <svg cIcon name="cilHistory" class="me-2"></svg>
+                    Catégorie {{ category }}
+                    <c-badge color="secondary" class="ms-2">{{ getArchivedApplicationFilesByCategory(category).length }}</c-badge>
+                  </button>
+                </c-tabs-list>
+                
+                <c-tabs-content>
+                  <c-tab-panel 
+                    *ngFor="let category of getArchivedCategories()" 
+                    [itemKey]="category"
+                    class="p-3">                    <div class="alert alert-info mb-3">
+                      <svg cIcon name="cilInfo" class="me-2"></svg>
+                      Ces dossiers sont expirés et ne peuvent plus être modifiés.
+                    </div>
+                    
+                    <div class="row g-3">
+                      <div *ngFor="let file of getArchivedApplicationFilesByCategory(category)" class="col-12 col-lg-6">
+                        <c-card class="border-secondary h-100 opacity-75">                          <c-card-body>
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                              <h6 class="mb-0 text-muted">{{ file.fileNumber || 'Dossier #' + file.id }} (Expiré)</h6>
+                              <c-badge color="secondary">Archivé</c-badge>
+                            </div>
+                            
+                            <p class="text-muted small mb-2">
+                              Créé le {{ formatDate(file.startingDate) }}
+                            </p>
+                            
+                            <div class="row g-2 mb-3">                              <div class="col-4">
+                                <small class="text-muted">Montant total</small>
+                                <div class="fw-semibold text-muted">{{ file.payment?.totalAmount || 0 }} MAD</div>
+                              </div>
+                              <div class="col-4">
+                                <small class="text-muted">Montant payé</small>
+                                <div class="fw-semibold text-muted">{{ file.payment?.paidAmount || 0 }} MAD</div>
+                              </div>
+                              <div class="col-4">
+                                <small class="text-muted">Timbre fiscal</small>
+                                <c-badge [color]="file.taxStamp ? 'success' : 'secondary'" size="sm">
+                                  {{ file.taxStamp ? 'Payé' : 'Non payé' }}
+                                </c-badge>
+                              </div>
+                              <div class="col-12">
+                                <small class="text-muted">Visite médicale</small>                                <c-badge 
+                                  [color]="file.medicalVisit === 'COMPLETED' ? 'success' : file.medicalVisit === 'EXPIRED' ? 'danger' : file.medicalVisit === 'PENDING' ? 'warning' : 'danger'" 
+                                  size="sm" 
+                                  class="ms-2">
+                                  {{ file.medicalVisit === 'COMPLETED' ? 'Validée' : file.medicalVisit === 'EXPIRED' ? 'Expirée' : file.medicalVisit === 'PENDING' ? 'En attente' : 'Pas encore demandé' }}
+                                </c-badge>
+                              </div>
+                            </div>
+                            
+                            <!-- Archived Payment Section -->
+                            <div class="border-top pt-3 mt-3">
+                              <h6 class="mb-2 text-muted">
+                                <svg cIcon name="cilCreditCard" class="me-2"></svg>
+                                Paiement final
+                              </h6>
+                              
+                              <div *ngIf="file.payment" class="mb-2">
+                                <div class="d-flex justify-content-between text-sm mb-1">
+                                  <span class="text-muted">{{ file.payment.paidAmount }} / {{ file.payment.totalAmount }} MAD</span>                                  <c-badge 
+                                    [color]="file.payment.status === 'COMPLETED' ? 'success' : 'secondary'"
+                                    size="sm">
+                                    {{ file.payment.status === 'COMPLETED' ? 'Payé' : 'Incomplet' }}
+                                  </c-badge>
+                                </div>
+                                <c-progress size="xs">
+                                  <c-progress-bar 
+                                    [value]="getPaymentProgress(file)" 
+                                    color="secondary">
+                                  </c-progress-bar>
+                                </c-progress>
+                              </div>
+                            </div>
+                            
+                            <!-- Exams Section for this Application File -->
+                            <div class="border-top pt-3 mt-3" *ngIf="file.exams && file.exams.length > 0">
+                              <h6 class="mb-2">
+                                <svg cIcon name="cilTask" class="me-2"></svg>
+                                Examens ({{ file.exams.length }})
+                              </h6>
+                              <div class="row g-1">
+                                <div *ngFor="let exam of file.exams" class="col-12">
+                                  <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                    <div>
+                                      <c-badge 
+                                        [color]="exam.examType === 'THEORETICAL' ? 'info' : 'primary'" 
+                                        size="sm" 
+                                        class="me-2">
+                                        {{ exam.examType === 'THEORETICAL' ? 'Théorique' : 'Pratique' }}
+                                      </c-badge>
+                                      <small class="text-muted">{{ formatDate(exam.date) }}</small>
+                                    </div>
+                                    <c-badge 
+                                      [color]="exam.status === 'PASSED' ? 'success' : exam.status === 'FAILED' ? 'danger' : 'warning'"
+                                      size="sm">
+                                      {{ exam.status === 'PASSED' ? 'Réussi' : exam.status === 'FAILED' ? 'Échoué' : 'Programmé' }}
+                                    </c-badge>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </c-card-body>
+                        </c-card>
                       </div>
                     </div>
-                    
-                    <div *ngIf="!isEligibleForExams(category)" class="alert alert-warning">
-                      <svg cIcon name="cilWarning" class="me-2"></svg>
-                      Le candidat doit compléter 20 heures de théorie et 20 heures de pratique pour être éligible aux examens.
-                    </div>
-                    
-                    <div *ngIf="getExamsByCategory(category).length === 0; else hasExams" class="text-center p-3 bg-light rounded">
-                      <svg cIcon name="cilTask" size="2xl" class="text-muted mb-2"></svg>
-                      <p class="text-muted mb-0">Aucun examen programmé pour cette catégorie</p>
-                    </div>
-                      <ng-template #hasExams>
-                      <div class="table-responsive">
-                        <table cTable [hover]="true" class="table-sm">
-                          <thead>
-                            <tr>
-                              <th style="min-width: 100px;">Type</th>
-                              <th style="min-width: 80px;">Tent.</th>
-                              <th style="min-width: 100px;">Date</th>
-                              <th style="min-width: 100px;">Statut</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr *ngFor="let exam of getExamsByCategory(category)">
-                              <td>
-                                <c-badge [color]="exam.examType === 'THEORETICAL' ? 'info' : 'primary'" class="text-nowrap">
-                                  {{ exam.examType === 'THEORETICAL' ? 'Théorique' : 'Pratique' }}
-                                </c-badge>
-                              </td>
-                              <td>{{ exam.attemptNumber }}</td>
-                              <td class="text-nowrap">{{ formatDate(exam.date) }}</td>
-                              <td>
-                                <c-badge 
-                                  [color]="exam.status === 'PASSED' ? 'success' : exam.status === 'FAILED' ? 'danger' : 'warning'"
-                                  class="text-nowrap">
-                                  {{ exam.status === 'PASSED' ? 'Réussi' : exam.status === 'FAILED' ? 'Échoué' : 'Programmé' }}
-                                </c-badge>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div></ng-template>
-                  </div>
-                  </div>
-                </c-tab-panel>
-              </c-tabs-content>
-            </c-tabs>
-          </ng-template>
+                  </c-tab-panel>
+                </c-tabs-content>
+              </c-tabs>
+            </div>
+          </div>
         </c-card-body>
-      </c-card>    </c-col>
+      </c-card>
+    </c-col>
   </c-row>
 </div>
 <!-- End Main Content Container -->
@@ -360,9 +511,7 @@
     <c-alert *ngIf="error" color="danger" [dismissible]="true">
       <svg cIcon name="cilWarning" class="me-2"></svg>
       {{ error }}
-    </c-alert>
-
-    <form [formGroup]="applicationFileForm" cForm>
+    </c-alert>    <form [formGroup]="applicationFileForm" cForm>
       <c-row class="g-3">
         <c-col [md]="12">
           <label cLabel for="category">Catégorie *</label>
@@ -403,21 +552,21 @@
         </c-col>
         
         <c-col [md]="6">
-          <label cLabel for="paidAmount">Montant payé *</label>
+          <label cLabel for="initialAmount">Montant initial *</label>
           <c-input-group>
             <input 
               cFormControl 
-              id="paidAmount" 
+              id="initialAmount" 
               type="number" 
-              formControlName="paidAmount"
+              formControlName="initialAmount"
               placeholder="0"
-              [class.is-invalid]="isFieldInvalid(applicationFileForm, 'paidAmount')">
+              [class.is-invalid]="isFieldInvalid(applicationFileForm, 'initialAmount')">
             <span cInputGroupText>MAD</span>
           </c-input-group>
           <c-form-feedback 
-            *ngIf="isFieldInvalid(applicationFileForm, 'paidAmount')" 
+            *ngIf="isFieldInvalid(applicationFileForm, 'initialAmount')" 
             [valid]="false">
-            {{ getFieldError(applicationFileForm, 'paidAmount') }}
+            {{ getFieldError(applicationFileForm, 'initialAmount') }}
           </c-form-feedback>
         </c-col>
       </c-row>
@@ -581,18 +730,43 @@
       {{ error }}
     </c-alert>
 
+    <!-- Application File Info -->
+    <div *ngIf="selectedApplicationFile" class="alert alert-info mb-3">
+      <h6 class="mb-2">
+        <svg cIcon name="cilInfo" class="me-2"></svg>
+        Dossier de candidature
+      </h6>
+      <div class="row g-2">
+        <div class="col-6">
+          <strong>Catégorie:</strong> {{ selectedApplicationFile.category }}
+        </div>        <div class="col-6">
+          <strong>Dossier:</strong> {{ selectedApplicationFile.fileNumber || '#' + selectedApplicationFile.id }}
+        </div><div class="col-6">
+          <strong>Total:</strong> {{ selectedApplicationFile.payment?.totalAmount || 0 }} MAD
+        </div>
+        <div class="col-6">
+          <strong>Déjà payé:</strong> {{ selectedApplicationFile.payment?.paidAmount || 0 }} MAD
+        </div>
+        <div class="col-12">
+          <strong>Reste à payer:</strong> 
+          <span class="text-danger fw-bold">
+            {{ getRemainingPayment(selectedApplicationFile) }} MAD
+          </span>
+        </div>
+      </div>
+    </div>
+
     <form [formGroup]="paymentForm" cForm>
       <c-row class="g-3">
         <c-col [md]="6">
           <label cLabel for="paymentAmount">Montant *</label>
-          <c-input-group>
-            <input 
+          <c-input-group>            <input 
               cFormControl 
               id="paymentAmount" 
               type="number" 
               formControlName="amount"
               placeholder="0"
-              [class.is-invalid]="isFieldInvalid(paymentForm, 'amount')">
+              [class.is-invalid]="isFieldInvalid(paymentForm, 'amount')">>
             <span cInputGroupText>MAD</span>
           </c-input-group>
           <c-form-feedback 
@@ -626,12 +800,10 @@
       color="secondary" 
       (click)="closePaymentModal()">
       Annuler
-    </button>
-    <button 
+    </button>    <button 
       cButton 
       color="primary" 
       (click)="onSubmitPayment()">
       Enregistrer le paiement
-    </button>
-  </c-modal-footer>
+    </button>  </c-modal-footer>
 </c-modal>

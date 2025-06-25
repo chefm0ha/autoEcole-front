@@ -26,87 +26,18 @@ import {
   ColComponent,
   InputGroupComponent,
   InputGroupTextDirective,
-  BadgeComponent,
-  SpinnerComponent,
+  BadgeComponent,  SpinnerComponent,
   AlertComponent,
-  DropdownComponent,
-  DropdownToggleDirective,
-  DropdownMenuDirective,
-  DropdownItemDirective,  TableDirective,
   ProgressComponent,
-  ProgressBarComponent,
-  TemplateIdDirective
+  ProgressBarComponent
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
-
-interface CandidateDetails {
-  cin: string;
-  firstName: string;
-  lastName: string;
-  address?: string;
-  city?: string;
-  email?: string;
-  gender: 'M' | 'F';
-  gsm: string;
-  isActive: boolean;
-  birthDay: string;
-  birthPlace?: string;
-  startingDate?: string;
-  instructor?: Instructor;
-  vehicle?: Vehicle;
-}
-
-interface Instructor {
-  cin: string;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  gsm: string;
-  startingDate: string;
-}
-
-interface Vehicle {
-  immatriculation: string;
-  vehicleBrand: string;
-  vehicleType: string;
-  fuelType: string;
-  category: string;
-}
-
-interface ApplicationFile {
-  id: number;
-  category: string;
-  status: 'ACTIVE' | 'EXPIRED';
-  startingDate: string;
-  practicalHoursCompleted: number;
-  theoreticalHoursCompleted: number;
-  totalAmount: number;
-  paidAmount: number;
-}
-
-interface Exam {
-  id: number;
-  examType: 'THEORETICAL' | 'PRACTICAL';
-  category: string;
-  attemptNumber: number;
-  date: string;
-  status: 'PASSED' | 'FAILED' | 'SCHEDULED';
-}
-
-interface PaymentInstallment {
-  id: number;
-  installmentNumber: number;
-  amount: number;
-  date: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE';
-}
-
-interface Payment {
-  totalAmount: number;
-  paidAmount: number;
-  status: 'PENDING' | 'PARTIAL' | 'PAID';
-  installments: PaymentInstallment[];
-}
+import { ApplicationFile, Exam, Payment, PaymentInstallment, ApplicationFileDTO, PaymentDTO, Category, CreateApplicationFileRequest } from '../../../models';
+import { CandidateDetailsDTO } from '../../../models/candidate.model';
+import { CandidateService } from '../../../services/candidate.service';
+import { ApplicationFileService } from '../../../services/application-file.service';
+import { PaymentService } from '../../../services/payment.service';
+import { CategoryService } from '../../../services/category.service';
 
 @Component({
   selector: 'app-candidate-details',
@@ -139,76 +70,62 @@ interface Payment {
     InputGroupComponent,
     InputGroupTextDirective,
     BadgeComponent,
-    SpinnerComponent,
-    AlertComponent,
+    SpinnerComponent,    AlertComponent,
     IconDirective,
-    DropdownComponent,
-    DropdownToggleDirective,
-    DropdownMenuDirective,    DropdownItemDirective,
-    TableDirective,
     ProgressComponent,
-    ProgressBarComponent,
-    TemplateIdDirective
+    ProgressBarComponent
   ]
 })
 export class CandidateDetailsComponent implements OnInit {
-  candidate!: CandidateDetails;
+  candidate!: CandidateDetailsDTO;
   applicationFiles: ApplicationFile[] = [];
-  exams: Exam[] = [];
-  payment!: Payment;
-  
-  loading = false;
+  archivedApplicationFiles: ApplicationFile[] = [];
+    loading = false;
   error = '';
   success = '';
   
+  // Archive view state
+  showArchive = false;
+  
   // Available data for dropdowns
-  availableInstructors: Instructor[] = [];
-  availableVehicles: Vehicle[] = [];
-  categories = [
-    { code: 'AM', description: 'Cyclomoteur ≤4kw/50cm³/50km/h' },
-    { code: 'A1', description: 'Motocycle ≤125cm³ et/ou ≤15kw' },
-    { code: 'A', description: 'Motocycle >125cm³ avec puissance ≤73.6kw' },
-    { code: 'B', description: 'Véhicules transport personnes ≤9 places' },
-    { code: 'C', description: 'Véhicules transport marchandises PTAC >3500kg' },
-    { code: 'D', description: 'Véhicules transport personnes >8 places' }
-  ];
+  categories: Category[] = [];
   
   // Modal states
-  showInstructorModal = false;
-  showVehicleModal = false;
   showApplicationFileModal = false;
   showExamModal = false;
   showPaymentModal = false;
-  
-  // Forms
-  instructorForm: FormGroup;
-  vehicleForm: FormGroup;
+    // Forms
   applicationFileForm: FormGroup;
   examForm: FormGroup;
   paymentForm: FormGroup;
   
   // Active tab for application files
   activeTab: string = '';
+  
+  // Selected application file for payment
+  selectedApplicationFile: ApplicationFile | null = null;
     // Tab change handler
   onTabChange(itemKey: string | number | undefined): void {
     if (typeof itemKey === 'string') {
       this.activeTab = itemKey;
     }
-  }
-  
-  constructor(
+  }  constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private candidateService: CandidateService,
+    private applicationFileService: ApplicationFileService,
+    private paymentService: PaymentService,
+    private categoryService: CategoryService
   ) {
-    this.instructorForm = this.createInstructorForm();
-    this.vehicleForm = this.createVehicleForm();
     this.applicationFileForm = this.createApplicationFileForm();
     this.examForm = this.createExamForm();
     this.paymentForm = this.createPaymentForm();
   }
-  
-  ngOnInit(): void {
+    ngOnInit(): void {
+    // Load categories first
+    this.loadCategories();
+    
     const cin = this.route.snapshot.params['cin'];
     if (cin) {
       this.loadCandidateDetails(cin);
@@ -216,199 +133,68 @@ export class CandidateDetailsComponent implements OnInit {
       this.router.navigate(['/app/candidates']);
     }
   }
-  
-  loadCandidateDetails(cin: string): void {
-    this.loading = true;
-    
-    // Mock data - replace with actual service calls
-    setTimeout(() => {
-      this.candidate = {
-        cin: cin,
-        firstName: 'Ahmed',
-        lastName: 'Alami',
-        address: '123 Rue Mohammed V',
-        city: 'CASABLANCA',
-        email: 'ahmed.alami@email.com',
-        gender: 'M',
-        gsm: '+212601234567',
-        isActive: true,
-        birthDay: '1995-03-15',
-        birthPlace: 'Casablanca',
-        startingDate: '2024-01-15',
-        instructor: {
-          cin: 'I123456789',
-          firstName: 'Ahmed',
-          lastName: 'Bennani',
-          email: 'ahmed.bennani@autoecole.ma',
-          gsm: '0612345678',
-          startingDate: '2023-01-15'
-        },
-        vehicle: {
-          immatriculation: '123-A-45',
-          vehicleBrand: 'Toyota',
-          vehicleType: 'Sedan',
-          fuelType: 'Gasoline',
-          category: 'B'
-        }
-      };
-        this.applicationFiles = [
-        {
-          id: 1,
-          category: 'B',
-          status: 'ACTIVE',
-          startingDate: '2024-01-15',
-          practicalHoursCompleted: 15,
-          theoreticalHoursCompleted: 20,
-          totalAmount: 5000,
-          paidAmount: 3000
-        },
-        {
-          id: 2,
-          category: 'B',
-          status: 'EXPIRED',
-          startingDate: '2023-06-10',
-          practicalHoursCompleted: 12,
-          theoreticalHoursCompleted: 18,
-          totalAmount: 4500,
-          paidAmount: 4500
-        },
-        {
-          id: 3,
-          category: 'A',
-          status: 'ACTIVE',
-          startingDate: '2024-02-01',
-          practicalHoursCompleted: 8,
-          theoreticalHoursCompleted: 12,
-          totalAmount: 6000,
-          paidAmount: 2000
-        }
-      ];
-        this.exams = [
-        {
-          id: 1,
-          examType: 'THEORETICAL',
-          category: 'B',
-          attemptNumber: 1,
-          date: '2024-03-15',
-          status: 'PASSED'
-        },
-        {
-          id: 2,
-          examType: 'PRACTICAL',
-          category: 'B',
-          attemptNumber: 1,
-          date: '2024-03-20',
-          status: 'FAILED'
-        },
-        {
-          id: 3,
-          examType: 'THEORETICAL',
-          category: 'A',
-          attemptNumber: 1,
-          date: '2024-03-25',
-          status: 'SCHEDULED'
-        }
-      ];
-      
-      this.payment = {
-        totalAmount: 5000,
-        paidAmount: 3000,
-        status: 'PARTIAL',
-        installments: [
-          {
-            id: 1,
-            installmentNumber: 1,
-            amount: 1500,
-            date: '2024-01-15',
-            status: 'PAID'
-          },
-          {
-            id: 2,
-            installmentNumber: 2,
-            amount: 1500,
-            date: '2024-02-15',
-            status: 'PAID'
-          },
-          {
-            id: 3,
-            installmentNumber: 3,
-            amount: 1000,
-            date: '2024-03-15',
-            status: 'PENDING'
-          },
-          {
-            id: 4,
-            installmentNumber: 4,
-            amount: 1000,
-            date: '2024-04-15',
-            status: 'PENDING'
-          }
-        ]
-      };
-      
-      this.availableInstructors = [
-        {
-          cin: 'I123456789',
-          firstName: 'Ahmed',
-          lastName: 'Bennani',
-          email: 'ahmed.bennani@autoecole.ma',
-          gsm: '0612345678',
-          startingDate: '2023-01-15'
-        },
-        {
-          cin: 'I987654321',
-          firstName: 'Fatima',
-          lastName: 'Alaoui',
-          email: 'fatima.alaoui@autoecole.ma',
-          gsm: '0687654321',
-          startingDate: '2023-02-01'
-        }
-      ];
-      
-      this.availableVehicles = [
-        {
-          immatriculation: '123-A-45',
-          vehicleBrand: 'Toyota',
-          vehicleType: 'Sedan',
-          fuelType: 'Gasoline',
-          category: 'B'
-        },
-        {
-          immatriculation: '456-B-78',
-          vehicleBrand: 'Honda',
-          vehicleType: 'Motorcycle',
-          fuelType: 'Gasoline',
-          category: 'A'
-        }
-      ];
-        // Set active tab to first category with application files
-      if (this.applicationFiles.length > 0) {
-        this.activeTab = this.applicationFiles[0].category;
-      } else {
-        this.activeTab = '';
+
+  loadCategories(): void {
+    this.categoryService.getAllCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        this.error = 'Erreur lors du chargement des catégories';
       }
-      
-      this.loading = false;
-    }, 1000);
-  }
-  
-  createInstructorForm(): FormGroup {
-    return this.fb.group({
-      instructorCin: ['', Validators.required]
+    });
+  }loadCandidateDetails(cin: string): void {
+    this.loading = true;
+    this.error = '';
+    
+    this.candidateService.getCandidateDetails(cin).subscribe({
+      next: (candidateDetails) => {
+        this.candidate = candidateDetails;
+        
+        // Load application files from API
+        this.applicationFileService.getApplicationFilesByCandidate(cin).subscribe({
+          next: (applicationFileDTOs) => {
+            // Convert DTOs to ApplicationFile format and separate active from expired
+            const allFiles = applicationFileDTOs.map(dto => this.convertToApplicationFile(dto));
+            
+            this.applicationFiles = allFiles.filter(file => file.status === 'ACTIVE');
+            this.archivedApplicationFiles = allFiles.filter(file => file.status === 'EXPIRED');
+            
+            // Load payment data for each application file
+            this.loadPaymentDataForFiles([...this.applicationFiles, ...this.archivedApplicationFiles]);
+            
+            // Set active tab to first category with application files
+            if (this.applicationFiles.length > 0) {
+              this.activeTab = this.applicationFiles[0].category;
+            } else if (this.archivedApplicationFiles.length > 0) {
+              this.activeTab = this.archivedApplicationFiles[0].category;
+              this.showArchive = true;
+            } else {
+              this.activeTab = '';
+            }
+            
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error loading application files:', error);
+            this.error = 'Erreur lors du chargement des dossiers de candidature: ' + error;
+            this.loading = false;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading candidate details:', error);
+        this.error = 'Erreur lors du chargement des détails du candidat: ' + error;
+        this.loading = false;
+      }
     });
   }
-  
-  createVehicleForm(): FormGroup {
-    return this.fb.group({
-      vehicleImmat: ['', Validators.required]
-    });
-  }
-  
   createApplicationFileForm(): FormGroup {
     return this.fb.group({
       category: ['', Validators.required],
       totalAmount: ['', [Validators.required, Validators.min(1)]],
-      paidAmount: ['', [Validators.required, Validators.min(0)]]
+      initialAmount: ['', [Validators.required, Validators.min(0)]]
     });
   }
   
@@ -426,21 +212,35 @@ export class CandidateDetailsComponent implements OnInit {
       amount: ['', [Validators.required, Validators.min(1)]],
       date: ['', Validators.required]
     });
-  }
-  // Get unique categories from application files
+  }  // Get unique categories from active application files
   getCategories(): string[] {
     return [...new Set(this.applicationFiles.map(file => file.category))];
   }
-  // Get application files by category
+  
+  // Get active application files by category
   getApplicationFilesByCategory(category: string): ApplicationFile[] {
     return this.applicationFiles.filter(file => file.category === category);
   }
   
-  // Get exams by category
-  getExamsByCategory(category: string): Exam[] {
-    return this.exams.filter(exam => exam.category === category);
+  // Get archived application files by category
+  getArchivedApplicationFilesByCategory(category: string): ApplicationFile[] {
+    return this.archivedApplicationFiles.filter(file => file.category === category);
   }
   
+  // Get all archived categories
+  getArchivedCategories(): string[] {
+    return [...new Set(this.archivedApplicationFiles.map(file => file.category))];
+  }
+  
+  // Toggle archive view
+  toggleArchive(): void {
+    this.showArchive = !this.showArchive;
+  }
+    // Get exams by category from application files
+  getExamsByCategory(category: string): Exam[] {
+    const files = this.applicationFiles.filter(file => file.category === category);
+    return files.flatMap(file => file.exams || []);
+  }  
   // Check if candidate is eligible for exams in a category
   isEligibleForExams(category: string): boolean {
     const files = this.getApplicationFilesByCategory(category);
@@ -451,144 +251,133 @@ export class CandidateDetailsComponent implements OnInit {
       activeFile.practicalHoursCompleted >= 20 : false;
   }
   
-  // Get remaining exam attempts for a category
+  // Check if a specific application file is eligible for exams
+  isApplicationFileEligibleForExams(file: ApplicationFile): boolean {
+    return file.theoreticalHoursCompleted >= 20 && 
+           file.practicalHoursCompleted >= 20;
+  }
+    // Get remaining exam attempts for a category
   getRemainingAttempts(category: string): number {
     const categoryExams = this.getExamsByCategory(category);
     return Math.max(0, 3 - categoryExams.length);
   }
   
-  // Modal methods
-  openInstructorModal(): void {
-    this.instructorForm.patchValue({
-      instructorCin: this.candidate.instructor?.cin || ''
-    });
-    this.showInstructorModal = true;
+  // Get remaining exam attempts for a specific application file
+  getApplicationFileRemainingAttempts(file: ApplicationFile): number {
+    const fileExams = file.exams || [];
+    return Math.max(0, 3 - fileExams.length);
   }
-  
-  openVehicleModal(): void {
-    this.vehicleForm.patchValue({
-      vehicleImmat: this.candidate.vehicle?.immatriculation || ''
-    });
-    this.showVehicleModal = true;
-  }
-  
+    // Modal methods
   openApplicationFileModal(): void {
     this.applicationFileForm.reset();
     this.showApplicationFileModal = true;
   }
-  
-  openExamModal(category: string): void {
+    openExamModal(category: string, applicationFile?: ApplicationFile): void {
     this.examForm.patchValue({ category });
     this.examForm.patchValue({ examType: '', date: '', status: '' });
+    this.selectedApplicationFile = applicationFile || null;
     this.showExamModal = true;
   }
-  
-  openPaymentModal(): void {
+    openPaymentModal(applicationFile: ApplicationFile): void {
+    this.selectedApplicationFile = applicationFile;
     this.paymentForm.reset();
     this.showPaymentModal = true;
   }
   
   // Close modals
-  closeInstructorModal(): void {
-    this.showInstructorModal = false;
-    this.instructorForm.reset();
-    this.error = '';
-    this.success = '';
-  }
-  
-  closeVehicleModal(): void {
-    this.showVehicleModal = false;
-    this.vehicleForm.reset();
-    this.error = '';
-    this.success = '';
-  }
-  
   closeApplicationFileModal(): void {
     this.showApplicationFileModal = false;
     this.applicationFileForm.reset();
     this.error = '';
     this.success = '';
   }
-  
-  closeExamModal(): void {
+    closeExamModal(): void {
     this.showExamModal = false;
     this.examForm.reset();
+    this.selectedApplicationFile = null;
     this.error = '';
     this.success = '';
   }
-  
-  closePaymentModal(): void {
+    closePaymentModal(): void {
     this.showPaymentModal = false;
     this.paymentForm.reset();
+    this.selectedApplicationFile = null;
     this.error = '';
     this.success = '';
-  }
-  
+  }  
   // Submit methods
-  onSubmitInstructor(): void {
-    if (this.instructorForm.valid) {
-      const instructorCin = this.instructorForm.value.instructorCin;
-      const instructor = this.availableInstructors.find(i => i.cin === instructorCin);
-      
-      this.candidate.instructor = instructor || undefined;
-      this.success = 'Moniteur affecté avec succès!';
-      
-      setTimeout(() => {
-        this.closeInstructorModal();
-      }, 1500);
-    }
-  }
-  
-  onSubmitVehicle(): void {
-    if (this.vehicleForm.valid) {
-      const vehicleImmat = this.vehicleForm.value.vehicleImmat;
-      const vehicle = this.availableVehicles.find(v => v.immatriculation === vehicleImmat);
-      
-      this.candidate.vehicle = vehicle || undefined;
-      this.success = 'Véhicule affecté avec succès!';
-      
-      setTimeout(() => {
-        this.closeVehicleModal();
-      }, 1500);
-    }
-  }
-  
   onSubmitApplicationFile(): void {
-    if (this.applicationFileForm.valid) {
+    if (this.applicationFileForm.valid && this.candidate) {
       const formValue = this.applicationFileForm.value;
       
-      const newFile: ApplicationFile = {
-        id: this.applicationFiles.length + 1,
-        category: formValue.category,
-        status: 'ACTIVE',
-        startingDate: new Date().toISOString().split('T')[0],
-        practicalHoursCompleted: 0,
-        theoreticalHoursCompleted: 0,
+      const request: CreateApplicationFileRequest = {
+        categoryCode: formValue.category,
         totalAmount: formValue.totalAmount,
-        paidAmount: formValue.paidAmount
+        initialAmount: formValue.initialAmount
       };
       
-      this.applicationFiles.push(newFile);
-      this.success = 'Dossier de candidature créé avec succès!';
+      this.loading = true;
+      this.error = '';
       
-      // Set as active tab if it's the first file
-      if (this.getCategories().length === 1) {
-        this.activeTab = newFile.category;
-      }
-      
-      setTimeout(() => {
-        this.closeApplicationFileModal();
-      }, 1500);
+      this.applicationFileService.saveApplicationFile(this.candidate.cin, request).subscribe({
+        next: (applicationFileDTO) => {
+          // Convert DTO to ApplicationFile and add to the list
+          const newFile = this.convertToApplicationFile(applicationFileDTO);
+          this.applicationFiles.push(newFile);
+            // Load payment data for the new file
+          this.loadPaymentDataForFiles([newFile]);
+          
+          this.success = 'Dossier de candidature créé avec succès!';
+          
+          // Set the new file's category as active tab
+          this.activeTab = newFile.category;
+          
+          this.loading = false;
+          
+          setTimeout(() => {
+            this.closeApplicationFileModal();
+          }, 1500);
+        },
+        error: (error) => {
+          console.error('Error creating application file:', error);
+          this.error = 'Erreur lors de la création du dossier: ' + error;
+          this.loading = false;
+        }
+      });
+    } else {
+      this.markFormGroupTouched(this.applicationFileForm);
     }
   }
-  
   onSubmitExam(): void {
     if (this.examForm.valid) {
       const formValue = this.examForm.value;
-      const categoryExams = this.getExamsByCategory(formValue.category);
+      const category = formValue.category;
+        // Use selectedApplicationFile if available, otherwise find by category
+      let applicationFile = this.selectedApplicationFile;
+      if (!applicationFile) {
+        applicationFile = this.applicationFiles.find(file => 
+          file.category === category && file.status === 'ACTIVE'
+        ) || null;
+      }
+      
+      if (!applicationFile) {
+        this.error = 'Aucun dossier actif trouvé pour cette catégorie';
+        return;
+      }
+      
+      // Initialize exams array if it doesn't exist
+      if (!applicationFile.exams) {
+        applicationFile.exams = [];
+      }
+      
+      const categoryExams = applicationFile.exams;
+      
+      // Generate unique ID across all exams
+      const allExams = this.applicationFiles.flatMap(file => file.exams || []);
+      const maxId = allExams.length > 0 ? Math.max(...allExams.map(e => e.id)) : 0;
       
       const newExam: Exam = {
-        id: this.exams.length + 1,
+        id: maxId + 1,
         examType: formValue.examType,
         category: formValue.category,
         attemptNumber: categoryExams.length + 1,
@@ -596,7 +385,7 @@ export class CandidateDetailsComponent implements OnInit {
         status: formValue.status
       };
       
-      this.exams.push(newExam);
+      applicationFile.exams.push(newExam);
       this.success = 'Examen ajouté avec succès!';
       
       setTimeout(() => {
@@ -604,26 +393,41 @@ export class CandidateDetailsComponent implements OnInit {
       }, 1500);
     }
   }
-  
   onSubmitPayment(): void {
-    if (this.paymentForm.valid) {
+    if (this.paymentForm.valid && this.selectedApplicationFile) {
       const formValue = this.paymentForm.value;
       
+      // Initialize payment if it doesn't exist
+      if (!this.selectedApplicationFile.payment) {
+        this.selectedApplicationFile.payment = {
+          id: 0,
+          totalAmount: 0,
+          paidAmount: 0,
+          status: 'PENDING',
+          installments: []
+        };
+      }
+      
+      // Ensure installments array exists
+      if (!this.selectedApplicationFile.payment.installments) {
+        this.selectedApplicationFile.payment.installments = [];
+      }
+      
       const newInstallment: PaymentInstallment = {
-        id: this.payment.installments.length + 1,
-        installmentNumber: this.payment.installments.length + 1,
+        id: this.selectedApplicationFile.payment.installments.length + 1,
+        installmentNumber: this.selectedApplicationFile.payment.installments.length + 1,
         amount: formValue.amount,
-        date: formValue.date,
-        status: 'PAID'
+        date: formValue.date
       };
       
-      this.payment.installments.push(newInstallment);
-      this.payment.paidAmount += formValue.amount;
-      
-      if (this.payment.paidAmount >= this.payment.totalAmount) {
-        this.payment.status = 'PAID';
-      } else if (this.payment.paidAmount > 0) {
-        this.payment.status = 'PARTIAL';
+      this.selectedApplicationFile.payment.installments.push(newInstallment);
+      this.selectedApplicationFile.payment.paidAmount += formValue.amount;
+        if (this.selectedApplicationFile.payment.paidAmount >= this.selectedApplicationFile.payment.totalAmount) {
+        this.selectedApplicationFile.payment.status = 'COMPLETED';
+      } else if (this.selectedApplicationFile.payment.paidAmount > 0) {
+        this.selectedApplicationFile.payment.status = 'PENDING';
+      } else {
+        this.selectedApplicationFile.payment.status = 'UNPAID';
       }
       
       this.success = 'Paiement enregistré avec succès!';
@@ -632,20 +436,6 @@ export class CandidateDetailsComponent implements OnInit {
         this.closePaymentModal();
       }, 1500);
     }
-  }
-  
-  // Remove instructor
-  removeInstructor(): void {
-    this.candidate.instructor = undefined;
-    this.success = 'Moniteur retiré avec succès!';
-    setTimeout(() => this.success = '', 3000);
-  }
-  
-  // Remove vehicle
-  removeVehicle(): void {
-    this.candidate.vehicle = undefined;
-    this.success = 'Véhicule retiré avec succès!';
-    setTimeout(() => this.success = '', 3000);
   }
   
   // Utility methods
@@ -660,9 +450,14 @@ export class CandidateDetailsComponent implements OnInit {
     }
     return phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
   }
-  
-  getPaymentProgress(): number {
-    return (this.payment.paidAmount / this.payment.totalAmount) * 100;
+    getPaymentProgress(applicationFile: ApplicationFile): number {
+    if (!applicationFile.payment) return 0;
+    return (applicationFile.payment.paidAmount / applicationFile.payment.totalAmount) * 100;
+  }
+    // Get remaining payment amount for an application file
+  getRemainingPayment(applicationFile: ApplicationFile): number {
+    if (!applicationFile.payment) return 0;
+    return applicationFile.payment.totalAmount - applicationFile.payment.paidAmount;
   }
   
   isFieldInvalid(form: FormGroup, fieldName: string): boolean {
@@ -692,5 +487,75 @@ export class CandidateDetailsComponent implements OnInit {
   
   goBack(): void {
     this.router.navigate(['/app/candidates']);
+  }  // Convert ApplicationFileDTO to ApplicationFile
+  private convertToApplicationFile(dto: ApplicationFileDTO): ApplicationFile {
+    console.log('Converting ApplicationFileDTO:', dto);
+    const converted: ApplicationFile = {
+      id: dto.id,
+      category: dto.categoryCode,
+      status: dto.isActive ? 'ACTIVE' : 'EXPIRED',
+      startingDate: dto.startingDate,
+      practicalHoursCompleted: dto.practicalHoursCompleted,
+      theoreticalHoursCompleted: dto.theoreticalHoursCompleted,
+      fileNumber: dto.fileNumber,
+      taxStamp: dto.taxStamp,
+      medicalVisit: dto.medicalVisit,
+      // Payment and exams will be loaded separately
+      payment: undefined,
+      exams: []
+    };
+    console.log('Converted ApplicationFile:', converted);
+    return converted;
+  }
+
+  // Load payment data for all application files
+  private loadPaymentDataForFiles(files: ApplicationFile[]): void {
+    files.forEach(file => {
+      this.paymentService.getPaymentByApplicationFile(file.id).subscribe({
+        next: (paymentDTO) => {
+          file.payment = this.convertToPayment(paymentDTO);
+        },
+        error: (error) => {
+          console.error(`Error loading payment for application file ${file.id}:`, error);
+          // Set default payment if no payment exists
+          file.payment = {
+            id: 0,
+            totalAmount: 0,
+            paidAmount: 0,
+            status: 'PENDING',
+            installments: []
+          };
+        }
+      });
+    });
+  }
+
+  // Convert PaymentDTO to Payment
+  private convertToPayment(dto: PaymentDTO): Payment {
+    return {
+      id: dto.id,
+      totalAmount: dto.totalAmount,
+      paidAmount: dto.paidAmount,
+      status: this.mapPaymentStatus(dto.status),
+      installments: dto.paymentInstallments.map(installment => ({
+        id: installment.id,
+        installmentNumber: installment.installmentNumber,
+        amount: installment.amount,
+        date: installment.date
+      }))
+    };
+  }
+  // Map database payment status to UI status
+  private mapPaymentStatus(dbStatus: string): 'PENDING' | 'COMPLETED' | 'UNPAID' {
+    switch (dbStatus) {
+      case 'COMPLETED':
+        return 'COMPLETED';
+      case 'UNPAID':
+        return 'UNPAID';
+      case 'PENDING':
+        return 'PENDING';
+      default:
+        return 'PENDING';
+    }
   }
 }

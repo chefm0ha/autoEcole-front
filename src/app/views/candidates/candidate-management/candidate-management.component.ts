@@ -31,8 +31,8 @@ import {
   DropdownDividerDirective
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
-import { Candidate, CandidateListDTO, CandidateSearchDTO, PageableResponse } from '../../../models/candidat.model';
-import { CandidateService } from '../../../services/candidat.service';
+import { Candidate, CandidateListDTO, CandidateSearchDTO, PageableResponse } from '../../../models/candidate.model';
+import { CandidateService } from '../../../services/candidate.service';
 import { Router } from '@angular/router';
 
 @Component({
