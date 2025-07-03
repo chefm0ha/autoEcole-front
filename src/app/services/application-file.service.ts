@@ -59,14 +59,7 @@ export class ApplicationFileService {
   // Error handling
   private handleError(error: any): Observable<never> {
     console.error('An error occurred:', error);
-    let errorMessage = 'Une erreur est survenue lors de la communication avec le serveur.';
-    
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    return throwError(() => errorMessage);
+    // Pass the original error object so components can access error.error.code
+    return throwError(() => error);
   }
 }

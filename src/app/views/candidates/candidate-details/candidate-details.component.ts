@@ -698,7 +698,58 @@ export class CandidateDetailsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating application file:', error);
-          this.error = 'Erreur lors de la création du dossier: ' + error;
+          
+          let errorMessage = 'Erreur lors de la création du dossier';
+          
+          // Handle specific error codes from backend
+          if (error?.error?.code) {
+            const code = error.error.code;
+            const message = error.error.message;
+            
+            switch (code) {
+              case 100:
+                errorMessage = 'Candidat introuvable';
+                break;
+              case 101:
+                errorMessage = 'Catégorie introuvable';
+                break;
+              case 102:
+                errorMessage = 'Impossible d\'ajouter le dossier: Un dossier actif est déjà en cours pour cette catégorie';
+                break;
+              case 103:
+                errorMessage = 'Impossible d\'ajouter le dossier: Un dossier terminé existe déjà pour cette catégorie';
+                break;
+              case 104:
+                errorMessage = 'Dossier de candidature introuvable';
+                break;
+              case 105:
+                errorMessage = 'Impossible d\'annuler un dossier terminé';
+                break;
+              case 106:
+                errorMessage = 'Le dossier de candidature est déjà annulé';
+                break;
+              case 404:
+              case 500:
+              case 999:
+                errorMessage = 'Une erreur est survenue';
+                break;
+              default:
+                errorMessage = message || 'Erreur lors de la création du dossier';
+            }
+          } else if (error?.status === 400 && error?.error?.message) {
+            // Fallback for other 400 errors with message
+            errorMessage = error.error.message;
+          } else if (error?.status === 404) {
+            errorMessage = 'Une erreur est survenue';
+          } else if (error?.status === 500) {
+            errorMessage = 'Une erreur est survenue';
+          } else if (typeof error?.error === 'string') {
+            errorMessage = error.error;
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          this.error = errorMessage;
           this.loading = false;
         }
       });
