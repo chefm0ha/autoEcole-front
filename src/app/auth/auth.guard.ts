@@ -7,22 +7,17 @@ import { from } from 'rxjs';
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
-
   // If already authenticated, allow access immediately
   if (authService.isAuthenticated) {
-    console.log('Auth Guard - User already authenticated');
     return true;
   }
-
   // If not authenticated, check auth status
   return from(authService.checkAuthStatus()).pipe(
     take(1),
     map(isAuthenticated => {
-      console.log('Auth Guard - isAuthenticated:', isAuthenticated);
       if (isAuthenticated) {
         return true;
       } else {
-        console.log('Auth Guard - Redirecting to login');
         router.navigate(['/login']);
         return false;
       }
@@ -33,21 +28,16 @@ export const authGuard: CanActivateFn = () => {
 export const loginGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
-
   // If already authenticated, redirect to app/dashboard immediately
   if (authService.isAuthenticated) {
-    console.log('Login Guard - User already authenticated, redirecting to app/dashboard');
     router.navigate(['/app/dashboard']);
     return false;
   }
-
   // If not authenticated, check auth status
   return from(authService.checkAuthStatus()).pipe(
     take(1),
     map(isAuthenticated => {
-      console.log('Login Guard - isAuthenticated:', isAuthenticated);
       if (isAuthenticated) {
-        console.log('Login Guard - Redirecting to app/dashboard');
         router.navigate(['/app/dashboard']);
         return false;
       } else {

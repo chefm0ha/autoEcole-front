@@ -113,6 +113,26 @@ export class CandidateService {
     }).pipe(catchError(this.handleError));
   }
 
+  // Update theoretical hours for application file
+  updateTheoreticalHours(applicationFileId: number, hours: number): Observable<string> {
+    const params = new HttpParams().set('hours', hours.toString());
+    return this.http.put(`http://localhost:9090/applicationFile/updateTheoreticalHours/${applicationFileId}`, null, {
+      params: params,
+      withCredentials: true,
+      responseType: 'text'
+    }).pipe(catchError(this.handleError));
+  }
+
+  // Update practical hours for application file
+  updatePracticalHours(applicationFileId: number, hours: number): Observable<string> {
+    const params = new HttpParams().set('hours', hours.toString());
+    return this.http.put(`http://localhost:9090/applicationFile/updatePracticalHours/${applicationFileId}`, null, {
+      params: params,
+      withCredentials: true,
+      responseType: 'text'
+    }).pipe(catchError(this.handleError));
+  }
+
   // Utility method to format names (first letter uppercase, rest lowercase)
   private formatName(name: string): string {
     if (!name) return '';

@@ -348,18 +348,25 @@ export class CandidateManagementComponent implements OnInit {
 
       const operation = this.isEditMode 
         ? this.candidateService.updateCandidate(this.candidateToEdit!.cin, candidate)
-        : this.candidateService.saveCandidate(candidate);
-
-      operation.subscribe({
+        : this.candidateService.saveCandidate(candidate);      operation.subscribe({
         next: (savedCandidate) => {
           this.success = this.isEditMode 
             ? 'Candidat modifié avec succès!' 
             : 'Candidat ajouté avec succès!';
           this.saving = false;
-          setTimeout(() => {
-            this.closeCandidateModal();
-            this.loadCandidates();
-          }, 1500);
+            if (this.isEditMode) {
+            // For edit mode, stay on the current page
+            setTimeout(() => {
+              this.closeCandidateModal();
+              this.loadCandidates();
+            }, 1500);
+          } else {
+            // For new candidate, redirect to details page after a shorter delay
+            setTimeout(() => {
+              this.closeCandidateModal();
+              this.router.navigate(['/app/candidates', savedCandidate.cin]);
+            }, 1000);
+          }
         },
         error: (error) => {
           this.error = error;
@@ -513,5 +520,16 @@ export class CandidateManagementComponent implements OnInit {
     setTimeout(() => {
       this.showCityDropdown = false;
     }, 300);
+  }
+
+  // Methods for dropdown positioning in table rows
+  getDropdownClass(index: number, totalCandidates: number): string {
+    // No special dropdown class needed, keep normal positioning
+    return '';
+  }
+
+  getDropdownMenuClass(index: number, totalCandidates: number): string {
+    // Always position at the end (right-aligned) for better visibility
+    return 'dropdown-menu-end';
   }
 }

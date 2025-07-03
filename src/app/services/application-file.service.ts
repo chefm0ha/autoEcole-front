@@ -24,6 +24,36 @@ export class ApplicationFileService {
     return this.http.post<ApplicationFileDTO>(`${this.apiUrl}/saveApplicationFile/${cin}`, request, {
       withCredentials: true
     }).pipe(catchError(this.handleError));
+  }  // Update tax stamp status
+  updateTaxStampStatus(applicationFileId: number, status: string): Observable<string> {
+    return this.http.put(`${this.apiUrl}/updateTaxStampStatus/${applicationFileId}?taxStampStatus=${status}`, 
+      {}, 
+      { 
+        withCredentials: true,
+        responseType: 'text'
+      }
+    ).pipe(catchError(this.handleError));
+  }
+  // Update medical visit status
+  updateMedicalVisitStatus(applicationFileId: number, status: string): Observable<string> {
+    return this.http.put(`${this.apiUrl}/updateMedicalVisitStatus/${applicationFileId}?medicalVisitStatus=${status}`, 
+      {}, 
+      { 
+        withCredentials: true,
+        responseType: 'text'
+      }
+    ).pipe(catchError(this.handleError));
+  }
+
+  // Cancel application file
+  cancelApplicationFile(applicationFileId: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}/cancelApplicationFile/${applicationFileId}`, 
+      {}, 
+      { 
+        withCredentials: true,
+        responseType: 'text'
+      }
+    ).pipe(catchError(this.handleError));
   }
 
   // Error handling

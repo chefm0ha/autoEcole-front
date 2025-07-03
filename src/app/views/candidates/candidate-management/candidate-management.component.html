@@ -96,8 +96,9 @@
     </c-alert>
 
     <!-- Candidates Table -->
-    <div *ngIf="!loading && candidates.length > 0" class="table-responsive">
-      <table cTable [hover]="true" [striped]="true" class="mb-0">        <thead>
+    <div *ngIf="!loading && candidates.length > 0" class="table-container">
+      <div class="table-responsive">
+        <table cTable [hover]="true" [striped]="true" class="mb-0">        <thead>
           <tr>
             <th 
               class="sortable" 
@@ -133,7 +134,7 @@
             <th class="text-center" style="width: 60px;">Actions</th>
           </tr>
         </thead>        <tbody>
-          <tr *ngFor="let candidate of candidates; trackBy: trackByCin">            
+          <tr *ngFor="let candidate of candidates; let i = index; trackBy: trackByCin">            
             <td class="fw-semibold">{{ candidate.cin }}</td>
             <td>{{ candidate.firstName }}</td>
             <td>{{ candidate.lastName }}</td>
@@ -151,11 +152,11 @@
               </c-badge>
             </td>
             <td class="text-center">
-              <c-dropdown>
+              <c-dropdown [class]="getDropdownClass(i, candidates.length)">
                 <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false">
                   <svg cIcon name="cilOptions"></svg>
                 </button>
-                <ul cDropdownMenu>                  
+                <ul cDropdownMenu [class]="getDropdownMenuClass(i, candidates.length)">                  
                   <li>
                     <button cDropdownItem (click)="openEditCandidateModal(candidate)">
                       <svg cIcon name="cilPencil" class="me-2"></svg>
@@ -181,6 +182,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- No Results -->

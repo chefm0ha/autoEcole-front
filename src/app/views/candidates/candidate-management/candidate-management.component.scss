@@ -14,10 +14,10 @@
 
   .table-responsive {
     border-radius: 0.375rem;
-    overflow: hidden;
+    // Allow dropdowns to show outside table bounds
+    overflow: visible;
     // Ensure tables don't cause horizontal overflow
     max-width: 100%;
-    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     
     table {
@@ -89,6 +89,45 @@
     &:focus {
       box-shadow: none !important;
     }
+  }
+
+  // Ensure dropdown menus are properly positioned and visible
+  .dropdown {
+    position: relative;
+    
+    .dropdown-menu {
+      position: absolute;
+      top: 100% !important; // Force dropdown to open below the button
+      bottom: auto !important; // Override any bottom positioning
+      z-index: 9999 !important; // Very high z-index to appear above everything
+      // Ensure dropdown appears above table content
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 0.375rem;
+      min-width: 160px;
+      margin-top: 0.125rem; // Small gap below the button
+      
+      // Always position at the end (right-aligned) for better visibility
+      &.dropdown-menu-end {
+        right: 0;
+        left: auto;
+      }
+    }
+  }
+
+  // Ensure table container has enough space for dropdowns
+  .table-container {
+    padding-bottom: 200px; // Space for dropdown menus
+    margin-bottom: -200px; // Negative margin to offset the padding
+    
+    // Ensure minimum height when there are few candidates
+    min-height: 300px;
+  }
+
+  // Ensure card body has enough space for dropdowns when content is limited
+  c-card-body {
+    min-height: 400px;
+    position: relative;
   }
 
   .form-check-input:checked {
