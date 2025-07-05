@@ -703,23 +703,38 @@ export class CandidateDetailsComponent implements OnInit {
       this.error = '';
         this.examService.updateExamStatus(this.selectedExam.id!, newStatus).subscribe({
         next: (response) => {
-          this.success = 'Statut de l\'examen mis à jour avec succès!';
-            // Update the exam status in the local data
-          if (this.selectedExam) {
-            this.selectedExam.status = newStatus;
-            // Also update in the application files
-            this.applicationFiles.forEach(file => {
-              if (file.exams) {
-                const examIndex = file.exams.findIndex(e => e.id === this.selectedExam!.id);
-                if (examIndex !== -1) {
-                  file.exams[examIndex].status = newStatus;
-                }
-              }
-            });
-          }
-          
-          this.loading = false;
-          this.closeExamStatusModal();
+          // Refresh all application files data to ensure everything is up to date
+          this.applicationFileService.getApplicationFilesByCandidate(this.candidate.cin).subscribe({
+            next: (applicationFileDTOs) => {
+              // Clear existing data
+              this.applicationFiles = [];
+              this.archivedApplicationFiles = [];
+              
+              // Separate active from archived based on isActive attribute (consistent with loadCandidateDetails)
+              this.applicationFiles = applicationFileDTOs
+                .filter(dto => dto.isActive)
+                .map(dto => this.convertToApplicationFile(dto));
+              
+              this.archivedApplicationFiles = applicationFileDTOs
+                .filter(dto => !dto.isActive)
+                .map(dto => this.convertToApplicationFile(dto));
+              
+              // Load payment and exam data for all files
+              this.loadPaymentDataForFiles(this.applicationFiles);
+              this.loadExamDataForFiles(this.applicationFiles);
+              this.loadPaymentDataForFiles(this.archivedApplicationFiles);
+              this.loadExamDataForFiles(this.archivedApplicationFiles);
+              
+              this.success = 'Statut de l\'examen mis à jour avec succès!';
+              this.loading = false;
+              this.closeExamStatusModal();
+            },
+            error: (error) => {
+              console.error('Error refreshing application files:', error);
+              this.success = 'Statut mis à jour mais erreur lors du rafraîchissement des données';
+              this.loading = false;
+            }
+          });
         },        error: (error) => {
           // Handle specific backend error messages
           let errorMessage = 'Erreur lors de la mise à jour du statut';
@@ -808,7 +823,7 @@ export class CandidateDetailsComponent implements OnInit {
                 errorMessage = 'Impossible d\'ajouter le dossier: Un dossier actif est déjà en cours pour cette catégorie';
                 break;
               case 103:
-                errorMessage = 'Impossible d\'ajouter le dossier: Un dossier terminé existe déjà pour cette catégorie';
+                errorMessage = 'Impossible d\'ajouter le dossier: Un dossier réussi existe déjà pour cette catégorie';
                 break;
               case 104:
                 errorMessage = 'Dossier de candidature introuvable';
@@ -861,17 +876,27 @@ export class CandidateDetailsComponent implements OnInit {
       };
         this.examService.saveExam(this.selectedApplicationFile.id, examRequest).subscribe({
         next: (message) => {
-          // Reload exam data for this application file
-          this.examService.getExamsByApplicationFile(this.selectedApplicationFile!.id).subscribe({
-            next: (examDTOs) => {
-              this.selectedApplicationFile!.exams = examDTOs.map(dto => 
-                this.convertToExam(dto, this.selectedApplicationFile!.category)
-              );
-                // Update the exam data in the main arrays as well
-              const fileIndex = this.applicationFiles.findIndex(f => f.id === this.selectedApplicationFile!.id);
-              if (fileIndex !== -1) {
-                this.applicationFiles[fileIndex].exams = this.selectedApplicationFile!.exams;
-              }
+          // Refresh all application files data to ensure everything is up to date
+          this.applicationFileService.getApplicationFilesByCandidate(this.candidate.cin).subscribe({
+            next: (applicationFileDTOs) => {
+              // Clear existing data
+              this.applicationFiles = [];
+              this.archivedApplicationFiles = [];
+              
+              // Separate active from archived based on isActive attribute (consistent with loadCandidateDetails)
+              this.applicationFiles = applicationFileDTOs
+                .filter(dto => dto.isActive)
+                .map(dto => this.convertToApplicationFile(dto));
+              
+              this.archivedApplicationFiles = applicationFileDTOs
+                .filter(dto => !dto.isActive)
+                .map(dto => this.convertToApplicationFile(dto));
+              
+              // Load payment and exam data for all files
+              this.loadPaymentDataForFiles(this.applicationFiles);
+              this.loadExamDataForFiles(this.applicationFiles);
+              this.loadPaymentDataForFiles(this.archivedApplicationFiles);
+              this.loadExamDataForFiles(this.archivedApplicationFiles);
               
               this.success = message || 'Examen enregistré avec succès!';
               this.loading = false;
@@ -881,7 +906,7 @@ export class CandidateDetailsComponent implements OnInit {
               }, 1500);
             },
             error: (error) => {
-              console.error('Error reloading exam data:', error);
+              console.error('Error refreshing application files:', error);
               this.success = 'Examen enregistré mais erreur lors du rafraîchissement des données';
               this.loading = false;
             }

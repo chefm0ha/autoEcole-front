@@ -198,7 +198,7 @@
                               (click)="openCancelApplicationFileModal(file)"
                               title="Annuler le dossier">
                               <svg cIcon name="cilX" class="me-1"></svg>
-                              Annuler
+                              Annuler le dossier
                             </button>
                           </div>
                         </div>
@@ -359,10 +359,7 @@
                           </ul>
                         </div>
                         
-                        <div *ngIf="isApplicationFileEligibleForExams(file) && getApplicationFileRemainingAttempts(file) === 0 && isApplicationFileFailed(file)" class="alert alert-danger mb-3">
-                          <svg cIcon name="cilBan" class="me-2"></svg>
-                          Dossier échoué - 2 échecs ou plus. Aucun nouvel examen ne peut être programmé.
-                        </div>
+
                         
                         <div *ngIf="file.exams && file.exams.length > 0; else noExams">
                           <div class="row g-3">
