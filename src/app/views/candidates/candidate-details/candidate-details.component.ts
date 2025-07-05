@@ -309,7 +309,9 @@ export class CandidateDetailsComponent implements OnInit {
     if (!activeFile) return false;
     
     return activeFile.theoreticalHoursCompleted >= 20 && 
-           activeFile.practicalHoursCompleted >= 20;
+           activeFile.practicalHoursCompleted >= 20 &&
+           activeFile.taxStamp === 'PAID' &&
+           activeFile.medicalVisit === 'COMPLETED';
   }
   // Get exam business rule violations for better UX
   getExamValidationErrors(applicationFile: ApplicationFile | null, examType: 'THEORY' | 'PRACTICAL'): string[] {
@@ -325,6 +327,26 @@ export class CandidateDetailsComponent implements OnInit {
     // Check if application file is active
     if (applicationFile.status !== 'ACTIVE') {
       errors.push('Le dossier doit être actif pour programmer un examen');
+    }
+    
+    // Check if tax stamp is paid
+    if (applicationFile.taxStamp !== 'PAID') {
+      errors.push('Le timbre fiscal doit être payé avant de programmer un examen');
+    }
+    
+    // Check if medical visit is completed
+    if (applicationFile.medicalVisit !== 'COMPLETED') {
+      errors.push('La visite médicale doit être validée avant de programmer un examen');
+    }
+    
+    // Check theoretical hours requirement
+    if (applicationFile.theoreticalHoursCompleted < 20) {
+      errors.push(`Heures théoriques insuffisantes (${applicationFile.theoreticalHoursCompleted}/20)`);
+    }
+    
+    // Check practical hours requirement
+    if (applicationFile.practicalHoursCompleted < 20) {
+      errors.push(`Heures pratiques insuffisantes (${applicationFile.practicalHoursCompleted}/20)`);
     }
     
     // Check maximum attempts (3 per exam type)
@@ -464,7 +486,9 @@ export class CandidateDetailsComponent implements OnInit {
   // Check if application file is eligible for exams
   isApplicationFileEligibleForExams(file: ApplicationFile): boolean {
     return file.theoreticalHoursCompleted >= 20 && 
-           file.practicalHoursCompleted >= 20;
+           file.practicalHoursCompleted >= 20 &&
+           file.taxStamp === 'PAID' &&
+           file.medicalVisit === 'COMPLETED';
   }
 
   // Check if there's a scheduled exam for an application file
@@ -1358,7 +1382,7 @@ export class CandidateDetailsComponent implements OnInit {
     const converted: ApplicationFile = {
       id: dto.id,
       category: dto.categoryCode,
-      status: dto.isActive ? (dto.status as any) : 'EXPIRED',
+      status: dto.status as any,
       startingDate: dto.startingDate,
       practicalHoursCompleted: dto.practicalHoursCompleted,
       theoreticalHoursCompleted: dto.theoreticalHoursCompleted,
@@ -1579,5 +1603,41 @@ export class CandidateDetailsComponent implements OnInit {
       return 0;
     }
     return applicationFile.exams.filter(exam => exam.examType === examType).length;
+  }
+
+  // Get missing prerequisites for exam eligibility
+  getMissingExamPrerequisites(file: ApplicationFile | null): string[] {
+    const missing: string[] = [];
+    
+    if (!file) {
+      missing.push('Aucun dossier sélectionné');
+      return missing;
+    }
+    
+    if (file.status !== 'ACTIVE') {
+      missing.push('Le dossier doit être actif');
+    }
+    
+    if (file.theoreticalHoursCompleted < 20) {
+      missing.push(`Heures théoriques insuffisantes (${file.theoreticalHoursCompleted}/20)`);
+    }
+    
+    if (file.practicalHoursCompleted < 20) {
+      missing.push(`Heures pratiques insuffisantes (${file.practicalHoursCompleted}/20)`);
+    }
+    
+    if (file.taxStamp !== 'PAID') {
+      missing.push('Le timbre fiscal doit être payé');
+    }
+    
+    if (file.medicalVisit !== 'COMPLETED') {
+      missing.push('La visite médicale doit être validée');
+    }
+    
+    return missing;
+  }
+  
+  getFilteredExamPrerequisites(file: ApplicationFile | null): string[] {
+    return this.getMissingExamPrerequisites(file).filter(prerequisite => prerequisite !== 'Le dossier doit être actif');
   }
 }
