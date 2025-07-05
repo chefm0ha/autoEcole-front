@@ -299,7 +299,6 @@
             formControlName="cin" 
             placeholder="Ex: A12345"
             [class.is-invalid]="isFieldInvalid(candidateForm, 'cin')"
-            [disabled]="isEditMode"
             style="text-transform: uppercase;">
           <c-form-feedback 
             *ngIf="isFieldInvalid(candidateForm, 'cin')" 

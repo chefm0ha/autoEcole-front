@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { DefaultLayoutComponent } from './layout';
 import { CandidateManagementComponent } from './views/candidates/candidate-management/candidate-management.component';
 import { CandidateDetailsComponent } from './views/candidates/candidate-details/candidate-details.component';
+import { CalendarComponent } from './views/calendar/calendar/calendar.component';
 import { LoginComponent } from './auth/login/login.component';
 import { Page404Component } from './pages/page404/page404.component';
 import { authGuard, loginGuard } from './auth/auth.guard';
@@ -35,6 +36,13 @@ export const routes: Routes = [
         loadChildren: () => import('./views/dashboard/routes').then((m) => m.routes),
         data: {
           title: 'Dashboard'
+        }
+      },
+      {
+        path: 'calendar',
+        component: CalendarComponent,
+        data: {
+          title: 'Calendrier des Examens'
         }
       },
       {

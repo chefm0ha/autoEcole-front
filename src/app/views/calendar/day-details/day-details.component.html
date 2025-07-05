@@ -1,0 +1,162 @@
+<!-- src/app/views/calendar/day-details/day-details.component.html -->
+
+<c-modal 
+  [visible]="visible"
+  (visibleChange)="onVisibilityChange($event)"
+  [keyboard]="true"
+  [backdrop]="true"
+  size="xl"
+  scrollable>
+  
+  <c-modal-header>
+    <h4 cModalTitle>
+      <svg cIcon name="cilCalendar" class="me-2"></svg>
+      Détails du {{ getFormattedDate() }}
+    </h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="onClose()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body class="p-0">
+    <!-- Summary Statistics -->
+    <div *ngIf="examSummary && hasExams()" class="border-bottom p-4 bg-light">
+      <h6 class="mb-3">
+        <svg cIcon name="cilChart" class="me-2"></svg>
+        Résumé des examens
+      </h6>
+      
+      <c-row class="g-3">
+        <c-col 
+          *ngFor="let stat of getSummaryStats()" 
+          [xs]="6" 
+          [md]="4" 
+          [lg]="2">
+          <div class="text-center">
+            <c-badge [color]="stat.color" class="d-block p-2 mb-1">
+              <div class="fs-5 fw-bold">{{ stat.value }}</div>
+            </c-badge>
+            <small class="text-muted">{{ stat.label }}</small>
+          </div>
+        </c-col>
+      </c-row>
+    </div>
+
+    <!-- No Exams Message -->
+    <div *ngIf="!hasExams()" class="text-center p-5">
+      <svg cIcon name="cilCalendar" size="3xl" class="text-muted mb-3"></svg>
+      <h5 class="text-muted mb-2">Aucun examen prévu</h5>
+      <p class="text-muted mb-0">
+        Il n'y a pas d'examens programmés pour cette date.
+      </p>
+    </div>
+
+    <!-- Exams by Category -->
+    <div *ngIf="hasExams()" class="p-4">
+      <div *ngFor="let category of categories; trackBy: trackByCategory" class="mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="mb-0">
+            <svg cIcon name="cilFolder" class="me-2"></svg>
+            Catégorie {{ category }}
+          </h6>
+          <c-badge color="info" size="sm">
+            {{ getExamsByCategory(category).length }} examen(s)
+          </c-badge>
+        </div>
+
+        <!-- Exams Table -->
+        <div class="table-responsive">
+          <table cTable [hover]="true" [striped]="true" class="mb-0">
+            <thead>
+              <tr>
+                <th>Candidat</th>
+                <th>Type</th>
+                <th>Statut</th>
+                <th>Tentative</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let exam of getExamsByCategory(category); trackBy: trackByExamId">
+                <td>
+                  <div class="d-flex flex-column">
+                    <span class="fw-semibold">
+                      {{ exam.candidateFirstName }} {{ exam.candidateLastName }}
+                    </span>
+                    <small class="text-muted">CIN: {{ exam.candidateCin }}</small>
+                  </div>
+                </td>
+                <td>
+                  <c-badge 
+                    [color]="getExamTypeColor(exam.examType)" 
+                    size="sm"
+                    class="d-flex align-items-center gap-1">
+                    <svg cIcon [name]="getExamTypeIcon(exam.examType)" size="sm"></svg>
+                    {{ getExamTypeLabel(exam.examType) }}
+                  </c-badge>
+                </td>
+                <td>
+                  <c-badge 
+                    [color]="getExamStatusColor(exam.status)" 
+                    size="sm">
+                    {{ getExamStatusLabel(exam.status) }}
+                  </c-badge>
+                </td>
+                <td>
+                  <span class="text-muted">#{{ exam.attemptNumber }}</span>
+                </td>
+                <td class="text-center">
+                  <button 
+                    cButton 
+                    color="outline-primary" 
+                    size="sm"
+                    (click)="viewCandidateDetails(exam.candidateCin)"
+                    title="Voir détails du candidat">
+                    <svg cIcon name="cilUser" size="sm"></svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Summary -->
+    <div *ngIf="hasExams() && examSummary" class="border-top p-4 bg-light">
+      <h6 class="mb-3">
+        <svg cIcon name="cilChart" class="me-2"></svg>
+        Répartition par catégorie
+      </h6>
+      
+      <c-row class="g-2">
+        <c-col 
+          *ngFor="let category of categories" 
+          [xs]="6" 
+          [md]="4" 
+          [lg]="3">
+          <c-card class="text-center h-100">
+            <c-card-body class="p-3">
+              <div class="fw-bold text-primary fs-4">
+                {{ examSummary.examsByCategory[category] || 0 }}
+              </div>
+              <small class="text-muted">Catégorie {{ category }}</small>
+            </c-card-body>
+          </c-card>
+        </c-col>
+      </c-row>
+    </div>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="onClose()">
+      Fermer
+    </button>
+  </c-modal-footer>
+</c-modal>

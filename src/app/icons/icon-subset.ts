@@ -28,6 +28,7 @@ import {
   cilBasket,
   cilBell,
   cilBold,
+  cilBook,
   cilBookmark,
   cilCalculator,
   cilCalendar,
@@ -102,7 +103,8 @@ import {
   cilWarning,
   cilX,
   cilMediaSkipBackward,
-  cilMediaSkipForward
+  cilMediaSkipForward,
+  cilClock
 } from '@coreui/icons';
 
 import { signet } from './signet';
@@ -137,6 +139,7 @@ export const iconSubset = {
   cilBasket,
   cilBell,
   cilBold,
+  cilBook,
   cilBookmark,
   cilCalculator,
   cilCalendar,
@@ -146,6 +149,7 @@ export const iconSubset = {
   cilCheckCircle,
   cilChevronLeft,
   cilChevronRight,
+  cilClock,
   cilCloudDownload,
   cilCode,
   cilCommentSquare,
@@ -245,6 +249,7 @@ export enum IconSubset {
   cilBasket = 'cilBasket',
   cilBell = 'cilBell',
   cilBold = 'cilBold',
+  cilBook = 'cilBook',
   cilBookmark = 'cilBookmark',
   cilCalculator = 'cilCalculator',
   cilCalendar = 'cilCalendar',
@@ -254,6 +259,7 @@ export enum IconSubset {
   cilCheckCircle = 'cilCheckCircle',
   cilChevronLeft = 'cilChevronLeft',
   cilChevronRight = 'cilChevronRight',
+  cilClock = 'cilClock',
   cilCloudDownload = 'cilCloudDownload',
   cilCode = 'cilCode',
   cilCommentSquare = 'cilCommentSquare',

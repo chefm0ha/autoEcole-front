@@ -1,0 +1,150 @@
+<!-- src/app/views/calendar/calendar/calendar.component.html -->
+
+<div class="container-fluid px-2 px-md-4">
+  <!-- Header -->
+  <c-card class="mb-4">
+    <c-card-header class="d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">
+        <svg cIcon name="cilCalendar" class="me-2"></svg>
+        Calendrier des Examens
+      </h4>
+      
+      <!-- Navigation Controls -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- Today Button -->
+        <button 
+          cButton 
+          color="outline-primary" 
+          size="sm"
+          (click)="goToToday()"
+          [disabled]="isCurrentMonth()"
+          class="d-none d-md-inline-flex">
+          <svg cIcon name="cilHome" class="me-1"></svg>
+          Aujourd'hui
+        </button>
+        
+        <!-- Month Navigation -->
+        <div class="d-flex align-items-center gap-1">
+          <button 
+            cButton 
+            color="outline-secondary" 
+            size="sm"
+            (click)="previousMonth()"
+            [disabled]="!canNavigatePrevious() || loading"
+            title="Mois précédent">
+            <svg cIcon name="cilChevronLeft"></svg>
+          </button>
+          
+          <span class="mx-3 fw-bold text-nowrap" style="min-width: 150px; text-align: center;">
+            {{ getCurrentMonthText() }}
+          </span>
+          
+          <button 
+            cButton 
+            color="outline-secondary" 
+            size="sm"
+            (click)="nextMonth()"
+            [disabled]="!canNavigateNext() || loading"
+            title="Mois suivant">
+            <svg cIcon name="cilChevronRight"></svg>
+          </button>
+        </div>
+      </div>
+    </c-card-header>
+
+    <c-card-body class="p-0">
+      <!-- Loading -->
+      <div *ngIf="loading" class="text-center p-5">
+        <c-spinner aria-hidden="true"></c-spinner>
+        <p class="mt-2 text-muted">Chargement du calendrier...</p>
+      </div>
+
+      <!-- Error -->
+      <c-alert *ngIf="error && !loading" color="danger" [dismissible]="true" class="m-3">
+        <svg cIcon name="cilWarning" class="me-2"></svg>
+        {{ error }}
+      </c-alert>
+
+      <!-- Calendar Grid -->
+      <div *ngIf="!loading && currentMonth" class="calendar-container">
+        <!-- Calendar Header - Days of Week -->
+        <div class="calendar-header">
+          <div 
+            *ngFor="let dayName of dayNames" 
+            class="calendar-header-day">
+            {{ dayName }}
+          </div>
+        </div>
+
+        <!-- Calendar Body - Weeks and Days -->
+        <div class="calendar-body">
+          <div 
+            *ngFor="let week of currentMonth.weeks" 
+            class="calendar-week">
+            <div 
+              *ngFor="let day of week.days"
+              [class]="getDayClasses(day)"
+              [title]="getDayTooltip(day)"
+              [cTooltip]="getDayTooltip(day)"
+              (click)="onDayClick(day)">
+              
+              <!-- Day Number -->
+              <div class="day-number">
+                {{ day.dayNumber }}
+              </div>
+              
+              <!-- Exam Count Badge -->
+              <div *ngIf="day.examCount > 0 && day.isCurrentMonth" class="exam-badge">
+                <c-badge 
+                  [color]="day.examCount >= 10 ? 'danger' : day.examCount >= 5 ? 'warning' : 'info'"
+                  size="sm">
+                  {{ day.examCount }}
+                </c-badge>
+              </div>
+              
+              <!-- Activity Indicator -->
+              <div *ngIf="day.examCount > 0 && day.isCurrentMonth" class="activity-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="calendar-legend p-3 border-top bg-light">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <small class="text-muted fw-bold">Légende:</small>
+          
+          <div class="d-flex align-items-center gap-1">
+            <div class="legend-indicator today-indicator"></div>
+            <small>Aujourd'hui</small>
+          </div>
+          
+          <div class="d-flex align-items-center gap-1">
+            <c-badge color="info" size="sm">1-4</c-badge>
+            <small>Faible activité</small>
+          </div>
+          
+          <div class="d-flex align-items-center gap-1">
+            <c-badge color="warning" size="sm">5-9</c-badge>
+            <small>Activité moyenne</small>
+          </div>
+          
+          <div class="d-flex align-items-center gap-1">
+            <c-badge color="danger" size="sm">10+</c-badge>
+            <small>Forte activité</small>
+          </div>
+        </div>
+      </div>
+    </c-card-body>
+  </c-card>
+</div>
+
+<!-- Day Details Modal -->
+<app-day-details
+  [visible]="showDayDetails"
+  [selectedDay]="selectedDay"
+  [exams]="selectedDayExams"
+  [examSummary]="selectedDayExamSummary"
+  (visibleChange)="showDayDetails = $event"
+  (closeModal)="closeDayDetails()">
+</app-day-details>
