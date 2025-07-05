@@ -242,12 +242,11 @@
                                 [color]="file.practicalHoursCompleted >= 20 ? 'success' : 'info'">
                               </c-progress-bar>
                             </c-progress>                          </div>                          <div class="col-md-3">
-                            <small class="text-muted">Timbre fiscal : 
+                            <small class="text-muted">Timbre fiscal</small>
+                            <div class="fw-semibold d-flex align-items-center justify-content-between">
                               <c-badge [color]="getTaxStampColor(file.taxStamp)" size="sm">
                                 {{ getTaxStampLabel(file.taxStamp) }}
                               </c-badge>
-                            </small>
-                            <div class="fw-semibold d-flex align-items-center justify-content-end">
                               <button 
                                 cButton 
                                 variant="ghost" 
@@ -259,14 +258,13 @@
                             </div>
                           </div>
                           <div class="col-md-3">
-                            <small class="text-muted">Visite médicale : 
+                            <small class="text-muted">Visite médicale</small>
+                            <div class="fw-semibold d-flex align-items-center justify-content-between">
                               <c-badge 
                                 [color]="getMedicalVisitColor(file.medicalVisit)" 
                                 size="sm">
                                 {{ getMedicalVisitLabel(file.medicalVisit) }}
                               </c-badge>
-                            </small>
-                            <div class="fw-semibold d-flex align-items-center justify-content-end">
                               <button 
                                 cButton 
                                 variant="ghost" 
