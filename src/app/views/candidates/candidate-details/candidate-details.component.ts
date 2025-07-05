@@ -233,12 +233,14 @@ export class CandidateDetailsComponent implements OnInit {
     
     return form;
   }
-    createExamForm(): FormGroup {
-    return this.fb.group({
-      examType: ['', Validators.required],
-      date: ['', Validators.required],
+  createExamForm(): FormGroup {
+    const form = this.fb.group({
+      examType: [''], // No validator needed as it's automatically set
+      date: ['', [Validators.required, this.chronologicalDateValidator.bind(this)]],
       status: ['', Validators.required]
     });
+    
+    return form;
   }
     createPaymentForm(): FormGroup {
     return this.fb.group({
@@ -383,6 +385,34 @@ export class CandidateDetailsComponent implements OnInit {
     return availableTypes.length > 0;
   }
 
+  // Get the next required exam type for an application file
+  getNextExamType(applicationFile: ApplicationFile | null): 'THEORY' | 'PRACTICAL' | null {
+    if (!applicationFile) return null;
+    
+    // Check if theory exam has been passed
+    const hasPassedTheory = applicationFile.exams?.some(exam => 
+      exam.examType === 'THEORY' && exam.status === 'PASSED'
+    );
+    
+    // If theory exam hasn't been passed, return 'THEORY'
+    if (!hasPassedTheory) {
+      return 'THEORY';
+    }
+    
+    // If theory exam has been passed, return 'PRACTICAL'
+    return 'PRACTICAL';
+  }
+
+  // Get the display label for exam type
+  getExamTypeLabel(examType: 'THEORY' | 'PRACTICAL'): string {
+    return examType === 'THEORY' ? 'Examen théorique' : 'Examen pratique';
+  }
+
+  // Get exam type icon
+  getExamTypeIcon(examType: 'THEORY' | 'PRACTICAL'): string {
+    return examType === 'THEORY' ? '📚' : '🚗';
+  }
+
   // Open application file modal
   openApplicationFileModal(): void {
     this.applicationFileForm.reset();
@@ -435,7 +465,15 @@ export class CandidateDetailsComponent implements OnInit {
   isApplicationFileEligibleForExams(file: ApplicationFile): boolean {
     return file.theoreticalHoursCompleted >= 20 && 
            file.practicalHoursCompleted >= 20;
-  }  // Get remaining attempts for an application file
+  }
+
+  // Check if there's a scheduled exam for an application file
+  hasScheduledExam(file: ApplicationFile): boolean {
+    if (!file || !file.exams) return false;
+    return file.exams.some(exam => exam.status === 'SCHEDULED');
+  }
+
+  // Get remaining attempts for an application file
   getApplicationFileRemainingAttempts(file: ApplicationFile | null): number {
     if (!file || !file.exams) return 3; // Maximum total attempts
     
@@ -613,13 +651,24 @@ export class CandidateDetailsComponent implements OnInit {
   // Open exam modal
   openExamModal(category: string, file: ApplicationFile): void {
     this.selectedApplicationFile = file;
+    const nextExamType = this.getNextExamType(file);
+    
     this.examForm.reset();
     this.examForm.patchValue({
+      examType: nextExamType,
       status: 'SCHEDULED' // Default to scheduled
     });
+    
+    // Update the date field validator to reflect the new application file context
+    const dateControl = this.examForm.get('date');
+    if (dateControl) {
+      dateControl.updateValueAndValidity();
+    }
+    
     this.showExamModal = true;
     this.error = '';
-    this.success = '';  }
+    this.success = '';
+  }
 
   // Submit exam status update
   onSubmitExamStatus(): void {
@@ -775,7 +824,7 @@ export class CandidateDetailsComponent implements OnInit {
       this.markFormGroupTouched(this.applicationFileForm);
     }
   }  onSubmitExam(): void {
-    if (this.examForm.valid && this.selectedApplicationFile) {
+    if (this.examForm.valid && this.selectedApplicationFile && this.examForm.get('examType')?.value) {
       const formValue = this.examForm.value;
       
       this.loading = true;
@@ -843,6 +892,11 @@ export class CandidateDetailsComponent implements OnInit {
           this.loading = false;
         }
       });} else {
+      // Check if no exam type is available
+      if (!this.examForm.get('examType')?.value) {
+        this.error = 'Aucun type d\'examen disponible pour ce dossier';
+        return;
+      }
       this.markFormGroupTouched(this.examForm);
     }
   }
@@ -1190,6 +1244,39 @@ export class CandidateDetailsComponent implements OnInit {
     return null;
   }
 
+  // Custom validator for chronological date order
+  chronologicalDateValidator(control: any): {[key: string]: any} | null {
+    if (!control.value || !this.selectedApplicationFile) {
+      return null; // Let required validator handle empty values
+    }
+
+    const selectedDate = new Date(control.value);
+    const minDateStr = this.getMinDateForExam(this.selectedApplicationFile);
+    
+    if (minDateStr) {
+      const minDate = new Date(minDateStr);
+      if (selectedDate < minDate) {
+        return { 'chronologicalOrder': { 
+          actualDate: control.value, 
+          minDate: minDateStr 
+        }};
+      }
+    }
+
+    return null;
+  }
+
+  // Method to format date for display
+  formatDateForDisplay(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
   // Utility methods
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('fr-FR');
@@ -1240,6 +1327,10 @@ export class CandidateDetailsComponent implements OnInit {
       }
       if (field.errors['exceedsMaxAmount']) {
         return `Le montant ne peut pas dépasser ${field.errors['exceedsMaxAmount'].maxValue} MAD (reste à payer)`;
+      }
+      if (field.errors['chronologicalOrder']) {
+        const minDate = field.errors['chronologicalOrder'].minDate;
+        return `La date doit être postérieure au ${minDate}`;
       }
     }
     
@@ -1458,5 +1549,35 @@ export class CandidateDetailsComponent implements OnInit {
     const practicalAttempts = file.exams.filter(e => e.examType === 'PRACTICAL').length;
     
     return { theory: theoryAttempts, practical: practicalAttempts };
+  }
+
+  // Get the minimum date for the next exam based on previous exams
+  getMinDateForExam(applicationFile: ApplicationFile | null): string | null {
+    if (!applicationFile || !applicationFile.exams || applicationFile.exams.length === 0) {
+      return null; // No minimum date for first exam
+    }
+
+    // Sort exams by date to find the latest one
+    const sortedExams = [...applicationFile.exams].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Get the date of the latest exam
+    const latestExam = sortedExams[sortedExams.length - 1];
+    const latestExamDate = new Date(latestExam.date);
+    
+    // Add one day to the latest exam date to ensure chronological order
+    latestExamDate.setDate(latestExamDate.getDate() + 1);
+    
+    // Return in YYYY-MM-DD format for HTML date input
+    return latestExamDate.toISOString().split('T')[0];
+  }
+
+  // Get the count of exams for this application file and exam type
+  getExamCountForType(applicationFile: ApplicationFile | null, examType: 'THEORY' | 'PRACTICAL'): number {
+    if (!applicationFile || !applicationFile.exams) {
+      return 0;
+    }
+    return applicationFile.exams.filter(exam => exam.examType === examType).length;
   }
 }

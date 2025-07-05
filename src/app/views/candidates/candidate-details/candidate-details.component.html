@@ -344,7 +344,7 @@
                             color="warning" 
                             size="sm" 
                             (click)="openExamModal(file.category, file)"
-                            [disabled]="!isApplicationFileEligibleForExams(file) || getApplicationFileRemainingAttempts(file) === 0 || hasGraduated(file)">
+                            [disabled]="!isApplicationFileEligibleForExams(file) || getApplicationFileRemainingAttempts(file) === 0 || hasGraduated(file) || hasScheduledExam(file)">
                             <svg cIcon name="cilPlus" class="me-1"></svg>
                             Ajouter examen
                           </button>
@@ -357,11 +357,6 @@
                         <div *ngIf="isApplicationFileEligibleForExams(file) && getApplicationFileRemainingAttempts(file) === 0 && isApplicationFileFailed(file)" class="alert alert-danger mb-3">
                           <svg cIcon name="cilBan" class="me-2"></svg>
                           Dossier échoué - 2 échecs ou plus. Aucun nouvel examen ne peut être programmé.
-                        </div>
-                        
-                        <div *ngIf="isApplicationFileEligibleForExams(file) && getApplicationFileRemainingAttempts(file) > 0 && !hasGraduated(file)" class="alert alert-info mb-3">
-                          <svg cIcon name="cilInfo" class="me-2"></svg>
-                          {{ getRemainingAttemptsInfo(file) }}
                         </div>
                         
                         <div *ngIf="file.exams && file.exams.length > 0; else noExams">
@@ -723,21 +718,13 @@
 
     <form [formGroup]="examForm" cForm>
       <c-row class="g-3">        <c-col md="6">
-          <label cLabel for="examType">Type d'examen *</label>
-          <select 
-            cFormSelect 
-            id="examType" 
-            formControlName="examType"
-            class="form-select"
-            [class.is-invalid]="isFieldInvalid(examForm, 'examType')">
-            <option value="" disabled>Choisir le type d'examen</option>
-            <option value="THEORY">📚 Examen théorique</option>
-            <option value="PRACTICAL">🚗 Examen pratique</option>
-          </select>
-          <c-form-feedback 
-            *ngIf="isFieldInvalid(examForm, 'examType')" 
-            [valid]="false">
-            {{ getFieldError(examForm, 'examType') }}          </c-form-feedback>
+          <label cLabel for="examType">Type d'examen</label>
+          <div class="mt-2">
+            <span class="fw-bold fs-5">
+              {{ getExamTypeIcon(examForm.get('examType')?.value) }} 
+              {{ getExamTypeLabel(examForm.get('examType')?.value) }}
+            </span>
+          </div>
         </c-col>
         
         <c-col md="6">
@@ -748,12 +735,14 @@
             type="date" 
             formControlName="date"
             class="form-control"
+            [min]="getMinDateForExam(selectedApplicationFile)"
             [class.is-invalid]="isFieldInvalid(examForm, 'date')">
           <c-form-feedback 
             *ngIf="isFieldInvalid(examForm, 'date')" 
             [valid]="false">
             {{ getFieldError(examForm, 'date') }}
-          </c-form-feedback>        </c-col>
+          </c-form-feedback>
+        </c-col>
         
         <c-col md="12">
           <label cLabel for="examStatus">Statut de l'examen *</label>
@@ -787,7 +776,7 @@
       cButton 
       color="primary" 
       (click)="onSubmitExam()"
-      [disabled]="loading">
+      [disabled]="loading || !examForm.get('examType')?.value || examForm.get('date')?.invalid || examForm.get('status')?.invalid">
       <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
       Enregistrer l'examen
     </button>
