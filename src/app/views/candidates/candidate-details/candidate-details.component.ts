@@ -222,11 +222,16 @@ export class CandidateDetailsComponent implements OnInit {
     });
   }
   createApplicationFileForm(): FormGroup {
-    return this.fb.group({
+    const form = this.fb.group({
       category: ['', Validators.required],
       totalAmount: ['', [Validators.required, Validators.min(1)]],
       initialAmount: ['', [Validators.required, Validators.min(0)]]
     });
+
+    // Add cross-field validator to ensure initial amount doesn't exceed total amount
+    form.setValidators(this.initialAmountValidator);
+    
+    return form;
   }
     createExamForm(): FormGroup {
     return this.fb.group({
@@ -398,6 +403,20 @@ export class CandidateDetailsComponent implements OnInit {
   openPaymentModal(file: ApplicationFile): void {
     this.selectedApplicationFile = file;
     this.paymentForm.reset();
+    
+    // Get remaining payment amount and apply dynamic validator
+    const remainingAmount = this.getRemainingPayment(file);
+    const amountControl = this.paymentForm.get('amount');
+    if (amountControl) {
+      // Update validators to include max amount validation
+      amountControl.setValidators([
+        Validators.required, 
+        Validators.min(1),
+        this.maxPaymentAmountValidator(remainingAmount)
+      ]);
+      amountControl.updateValueAndValidity();
+    }
+    
     this.showPaymentModal = true;
     this.error = '';
     this.success = '';
@@ -1147,6 +1166,30 @@ export class CandidateDetailsComponent implements OnInit {
     }
   }
 
+  // Custom validator for payment amount
+  private maxPaymentAmountValidator(maxAmount: number) {
+    return (control: any) => {
+      if (control.value && control.value > maxAmount) {
+        return { exceedsMaxAmount: { actualValue: control.value, maxValue: maxAmount } };
+      }
+      return null;
+    };
+  }
+
+  // Custom validator for initial amount vs total amount
+  private initialAmountValidator(control: any) {
+    if (!(control instanceof FormGroup)) return null;
+    
+    const totalAmount = control.get('totalAmount')?.value;
+    const initialAmount = control.get('initialAmount')?.value;
+    
+    if (totalAmount && initialAmount && Number(initialAmount) > Number(totalAmount)) {
+      return { initialAmountExceedsTotal: { totalAmount, initialAmount } };
+    }
+    
+    return null;
+  }
+
   // Utility methods
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('fr-FR');
@@ -1177,7 +1220,13 @@ export class CandidateDetailsComponent implements OnInit {
 
   isFieldInvalid(form: FormGroup, fieldName: string): boolean {
     const field = form.get(fieldName);
-    return field ? field.invalid && (field.dirty || field.touched) : false;
+    const fieldInvalid = field ? field.invalid && (field.dirty || field.touched) : false;
+    
+    // Also check for form-level errors that affect this field
+    const formInvalid = form.errors && (form.dirty || form.touched) && 
+                       form.errors['initialAmountExceedsTotal'] && fieldName === 'initialAmount';
+    
+    return fieldInvalid || !!formInvalid;
   }
 
   getFieldError(form: FormGroup, fieldName: string): string {
@@ -1189,7 +1238,18 @@ export class CandidateDetailsComponent implements OnInit {
       if (field.errors['min']) {
         return `La valeur minimale est ${field.errors['min'].min}`;
       }
+      if (field.errors['exceedsMaxAmount']) {
+        return `Le montant ne peut pas dépasser ${field.errors['exceedsMaxAmount'].maxValue} MAD (reste à payer)`;
+      }
     }
+    
+    // Check for form-level errors (cross-field validation)
+    if (form.errors && (form.dirty || form.touched)) {
+      if (form.errors['initialAmountExceedsTotal'] && fieldName === 'initialAmount') {
+        return 'Le montant initial ne peut pas dépasser le montant total';
+      }
+    }
+    
     return '';
   }
 

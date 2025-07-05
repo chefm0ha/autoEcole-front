@@ -637,7 +637,9 @@
               id="initialAmount" 
               type="number" 
               formControlName="initialAmount"
-              placeholder="0"
+              [placeholder]="applicationFileForm.get('totalAmount')?.value ? 'Max: ' + applicationFileForm.get('totalAmount')?.value + ' MAD' : '0'"
+              [max]="applicationFileForm.get('totalAmount')?.value || 0"
+              step="0.01"
               [class.is-invalid]="isFieldInvalid(applicationFileForm, 'initialAmount')">
             <span cInputGroupText>MAD</span>
           </c-input-group>
@@ -661,7 +663,9 @@
     <button 
       cButton 
       color="primary" 
+      [disabled]="applicationFileForm.invalid || loading"
       (click)="onSubmitApplicationFile()">
+      <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
       Créer le dossier
     </button>
   </c-modal-footer>
@@ -839,12 +843,22 @@
         </div>
         <div class="col-12">
           <strong>Reste à payer:</strong> 
-          <span class="text-danger fw-bold">
+          <span [class]="getRemainingPayment(selectedApplicationFile) > 0 ? 'text-danger fw-bold' : 'text-success fw-bold'">
             {{ getRemainingPayment(selectedApplicationFile) }} MAD
+          </span>
+          <span *ngIf="getRemainingPayment(selectedApplicationFile) === 0" class="text-success ms-2">
+            ✓ Paiement complet
           </span>
         </div>
       </div>
-    </div>    <form [formGroup]="paymentForm" cForm>
+    </div>
+
+    <!-- Payment already complete message -->
+    <c-alert *ngIf="selectedApplicationFile && getRemainingPayment(selectedApplicationFile) === 0" color="success" class="mb-3">
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      Le paiement de ce dossier est déjà complet. Aucun paiement supplémentaire n'est nécessaire.
+    </c-alert>    <!-- Payment Form - only show if remaining amount > 0 -->
+    <form [formGroup]="paymentForm" cForm *ngIf="selectedApplicationFile && getRemainingPayment(selectedApplicationFile) > 0">
       <c-row class="g-3">
         <c-col md="12">
           <label cLabel for="paymentAmount">Montant *</label>
@@ -854,7 +868,9 @@
               id="paymentAmount" 
               type="number" 
               formControlName="amount"
-              placeholder="0"
+              [placeholder]="'Saisissez un montant (max: ' + getRemainingPayment(selectedApplicationFile) + ' MAD)'"
+              [max]="getRemainingPayment(selectedApplicationFile)"
+              step="0.01"
               [class.is-invalid]="isFieldInvalid(paymentForm, 'amount')">
             <span cInputGroupText>MAD</span>
           </c-input-group>
@@ -877,7 +893,10 @@
     </button>    <button 
       cButton 
       color="primary" 
+      *ngIf="selectedApplicationFile && getRemainingPayment(selectedApplicationFile) > 0"
+      [disabled]="paymentForm.invalid || loading"
       (click)="onSubmitPayment()">
+      <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
       Enregistrer le paiement
     </button>  </c-modal-footer>
 </c-modal>
