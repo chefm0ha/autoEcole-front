@@ -524,7 +524,10 @@ export class CandidateManagementComponent implements OnInit {
 
   // Methods for dropdown positioning in table rows
   getDropdownClass(index: number, totalCandidates: number): string {
-    // No special dropdown class needed, keep normal positioning
+    // For last 2 rows, add a class to position dropdown upward
+    if (index >= totalCandidates - 2 && totalCandidates > 2) {
+      return 'dropup';
+    }
     return '';
   }
 

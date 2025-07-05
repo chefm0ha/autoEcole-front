@@ -242,11 +242,12 @@
                                 [color]="file.practicalHoursCompleted >= 20 ? 'success' : 'info'">
                               </c-progress-bar>
                             </c-progress>                          </div>                          <div class="col-md-3">
-                            <small class="text-muted">Timbre fiscal</small>
-                            <div class="fw-semibold d-flex align-items-center justify-content-between">
+                            <small class="text-muted">Timbre fiscal : 
                               <c-badge [color]="getTaxStampColor(file.taxStamp)" size="sm">
                                 {{ getTaxStampLabel(file.taxStamp) }}
                               </c-badge>
+                            </small>
+                            <div class="fw-semibold d-flex align-items-center justify-content-end">
                               <button 
                                 cButton 
                                 variant="ghost" 
@@ -258,13 +259,14 @@
                             </div>
                           </div>
                           <div class="col-md-3">
-                            <small class="text-muted">Visite médicale</small>
-                            <div class="fw-semibold d-flex align-items-center justify-content-between">
+                            <small class="text-muted">Visite médicale : 
                               <c-badge 
                                 [color]="getMedicalVisitColor(file.medicalVisit)" 
                                 size="sm">
                                 {{ getMedicalVisitLabel(file.medicalVisit) }}
                               </c-badge>
+                            </small>
+                            <div class="fw-semibold d-flex align-items-center justify-content-end">
                               <button 
                                 cButton 
                                 variant="ghost" 
@@ -439,10 +441,7 @@
                   <c-tab-panel 
                     *ngFor="let category of getArchivedCategories()" 
                     [itemKey]="category"
-                    class="p-3">                    <div class="alert alert-info mb-3">
-                      <svg cIcon name="cilInfo" class="me-2"></svg>
-                      Ces dossiers sont expirés et ne peuvent plus être modifiés.
-                    </div>
+                    class="p-3">
                     
                     <div class="row g-3">
                       <div *ngFor="let file of getArchivedApplicationFilesByCategory(category)" class="col-12 col-lg-6">
@@ -465,22 +464,20 @@
                               Créé le {{ formatDate(file.startingDate) }}
                             </p>                              <div class="row g-2 mb-3">
                               <div class="col-6">
-                                <small class="text-muted">Timbre fiscal</small>
-                                <div>
+                                <small class="text-muted">Timbre fiscal : 
                                   <c-badge [color]="getTaxStampColor(file.taxStamp)" size="sm">
                                     {{ getTaxStampLabel(file.taxStamp) }}
                                   </c-badge>
-                                </div>
+                                </small>
                               </div>
                               <div class="col-12">
-                                <small class="text-muted">Visite médicale</small>
-                                <div>
+                                <small class="text-muted">Visite médicale : 
                                   <c-badge 
                                     [color]="getMedicalVisitColor(file.medicalVisit)" 
                                     size="sm">
                                     {{ getMedicalVisitLabel(file.medicalVisit) }}
                                   </c-badge>
-                                </div>
+                                </small>
                               </div>
                             </div>
                             
