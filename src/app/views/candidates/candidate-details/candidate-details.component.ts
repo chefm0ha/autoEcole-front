@@ -180,15 +180,14 @@ export class CandidateDetailsComponent implements OnInit {
         
         // Load application files from API
         this.applicationFileService.getApplicationFilesByCandidate(cin).subscribe({
-          next: (applicationFileDTOs) => {            // Convert DTOs to ApplicationFile format and separate active from expired
-            const allFiles = applicationFileDTOs.map(dto => this.convertToApplicationFile(dto));
+          next: (applicationFileDTOs) => {            // Separate active from archived based on isActive attribute
+            this.applicationFiles = applicationFileDTOs
+              .filter(dto => dto.isActive)
+              .map(dto => this.convertToApplicationFile(dto));
             
-            this.applicationFiles = allFiles.filter(file => 
-              ['IN_PROGRESS', 'COMPLETED', 'ACTIVE'].includes(file.status)
-            );
-            this.archivedApplicationFiles = allFiles.filter(file => 
-              ['EXPIRED', 'CANCELLED', 'GRADUATED', 'FAILED'].includes(file.status)
-            );
+            this.archivedApplicationFiles = applicationFileDTOs
+              .filter(dto => !dto.isActive)
+              .map(dto => this.convertToApplicationFile(dto));
             
             // Load payment data for each application file
             this.loadPaymentDataForFiles([...this.applicationFiles, ...this.archivedApplicationFiles]);
