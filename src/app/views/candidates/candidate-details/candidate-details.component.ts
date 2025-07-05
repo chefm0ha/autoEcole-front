@@ -776,7 +776,13 @@ export class CandidateDetailsComponent implements OnInit {
           // Load exam data for the new file
           this.loadExamDataForFiles([newFile]);
           
-          this.success = 'Dossier de candidature créé avec succès!';
+          // If candidate is inactive, activate them automatically
+          if (!this.candidate.isActive) {
+            this.activateCandidate();
+            this.success = 'Dossier de candidature créé avec succès! Le candidat a été activé automatiquement.';
+          } else {
+            this.success = 'Dossier de candidature créé avec succès!';
+          }
           
           // Set the new file's category as active tab
           this.activeTab = newFile.category;
@@ -1639,5 +1645,38 @@ export class CandidateDetailsComponent implements OnInit {
   
   getFilteredExamPrerequisites(file: ApplicationFile | null): string[] {
     return this.getMissingExamPrerequisites(file).filter(prerequisite => prerequisite !== 'Le dossier doit être actif');
+  }
+
+  // Activate candidate when application file is created
+  private activateCandidate(): void {
+    if (this.candidate && !this.candidate.isActive) {
+      // Create updated candidate object with isActive = true
+      const updatedCandidate = {
+        cin: this.candidate.cin,
+        firstName: this.candidate.firstName,
+        lastName: this.candidate.lastName,
+        address: this.candidate.address,
+        city: this.candidate.city,
+        email: this.candidate.email,
+        gender: this.candidate.gender,
+        gsm: this.candidate.gsm,
+        isActive: true, // Activate the candidate
+        birthDay: this.candidate.birthDay,
+        birthPlace: this.candidate.birthPlace
+      };
+
+      // Update candidate in the backend
+      this.candidateService.updateCandidate(this.candidate.cin, updatedCandidate).subscribe({
+        next: (updatedCandidateResponse) => {
+          // Update local candidate object
+          this.candidate.isActive = true;
+          console.log('Candidate activated successfully after creating application file');
+        },
+        error: (error) => {
+          console.error('Error activating candidate:', error);
+          // Don't show error to user as the application file was created successfully
+        }
+      });
+    }
   }
 }

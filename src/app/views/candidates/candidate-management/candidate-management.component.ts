@@ -170,7 +170,7 @@ export class CandidateManagementComponent implements OnInit {
       email: ['', [Validators.email]],
       gender: ['', Validators.required],
       gsm: ['', [Validators.required, Validators.pattern(/^(\+212|0)[567]\d{8}$/)]],
-      isActive: [true],
+      isActive: [false],
       birthDay: ['', Validators.required],
       birthPlace: ['']
     });
@@ -272,7 +272,7 @@ export class CandidateManagementComponent implements OnInit {
     this.isEditMode = false;
     this.candidateToEdit = null;
     this.candidateForm.reset();
-    this.candidateForm.patchValue({ isActive: true, gender: 'M' });
+    this.candidateForm.patchValue({ isActive: false, gender: 'M' });
     this.showCandidateModal = true;
   }
   openEditCandidateModal(candidate: CandidateListDTO): void {
