@@ -124,31 +124,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Category Summary -->
-    <div *ngIf="hasExams() && examSummary" class="border-top p-4 bg-light">
-      <h6 class="mb-3">
-        <svg cIcon name="cilChart" class="me-2"></svg>
-        Répartition par catégorie
-      </h6>
-      
-      <c-row class="g-2">
-        <c-col 
-          *ngFor="let category of categories" 
-          [xs]="6" 
-          [md]="4" 
-          [lg]="3">
-          <c-card class="text-center h-100">
-            <c-card-body class="p-3">
-              <div class="fw-bold text-primary fs-4">
-                {{ examSummary.examsByCategory[category] || 0 }}
-              </div>
-              <small class="text-muted">Catégorie {{ category }}</small>
-            </c-card-body>
-          </c-card>
-        </c-col>
-      </c-row>
-    </div>
   </c-modal-body>
   
   <c-modal-footer>

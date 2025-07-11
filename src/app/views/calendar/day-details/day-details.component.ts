@@ -13,9 +13,7 @@ import {
   BadgeComponent,
   TableDirective,
   RowComponent,
-  ColComponent,
-  CardComponent,
-  CardBodyComponent
+  ColComponent
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
 import { 
@@ -41,8 +39,6 @@ import {
     TableDirective,
     RowComponent,
     ColComponent,
-    CardComponent,
-    CardBodyComponent,
     IconDirective
   ]
 })
