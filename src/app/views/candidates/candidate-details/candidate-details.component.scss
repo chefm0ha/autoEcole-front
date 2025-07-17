@@ -509,4 +509,540 @@
       }
     }
   }
+
+  // Three column horizontal layout
+  .three-column-layout {
+    .col-lg-4 {
+      // Ensure equal height columns
+      .h-100 {
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+      }
+    }
+    
+    // Make scrollable areas more compact
+    .compact-scroll {
+      scrollbar-width: thin;
+      
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: var(--cui-gray-100);
+        border-radius: 2px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: var(--cui-gray-400);
+        border-radius: 2px;
+        
+        &:hover {
+          background: var(--cui-gray-500);
+        }
+      }
+    }
+    
+    // Responsive adjustments
+    @media (max-width: 991px) {
+      .col-lg-4 {
+        margin-bottom: 1rem;
+        
+        .h-100 {
+          min-height: auto;
+        }
+      }
+    }
+  }
+
+  // Enhanced card styling
+  .three-section-card {
+    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+    
+    &:hover {
+      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
+    }
+  }
+
+  // Theoretical Hours Circle
+  .theoretical-hours-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: relative;
+    padding: 8px;
+    background: conic-gradient(#28a745 0deg 0deg, #e9ecef 0deg 360deg);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .theoretical-hours-inner {
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 50%;
+    border: 2px solid #f8f9fa;
+    position: relative;
+    
+    .fs-4 {
+      color: #28a745;
+      font-weight: 700;
+    }
+    
+    button {
+      background: rgba(40, 167, 69, 0.1);
+      border: 1px solid #28a745;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &:hover {
+        background: #28a745;
+        color: white;
+      }
+    }
+  }
+
+  // Status Buttons
+  .d-flex.justify-content-center.gap-3 {
+    button {
+      min-width: 140px;
+      height: 40px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      font-weight: 500;
+      white-space: nowrap;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      
+      &.btn-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        color: white;
+      }
+      
+      &.btn-danger {
+        background: linear-gradient(135deg, #dc3545, #e74c3c);
+        border: none;
+        color: white;
+      }
+      
+      &.btn-warning {
+        background: linear-gradient(135deg, #ffc107, #f39c12);
+        border: none;
+        color: #212529;
+      }
+      
+      &.btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        border: none;
+        color: white;
+      }
+      
+      span {
+        font-size: 0.8rem;
+      }
+      
+      svg {
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  // Column background colors - force white background for all columns with shadow
+  .row.g-3 {
+    .col-lg-4 {
+      .border.rounded {
+        background: white !important;
+        border: 1px solid var(--cui-border-color) !important;
+        color: var(--cui-body-color) !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        transition: box-shadow 0.3s ease !important;
+        
+        &:hover {
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        // Ensure text remains readable with white background
+        h6, .fw-semibold, .mb-0 {
+          color: var(--cui-body-color) !important;
+        }
+        
+        .text-muted, small {
+          color: var(--cui-gray-600) !important;
+        }
+        
+        .text-dark {
+          color: var(--cui-body-color) !important;
+        }
+        
+        // Badge styling on white background
+        .badge {
+          background: var(--cui-gray-100) !important;
+          color: var(--cui-body-color) !important;
+          border: 1px solid var(--cui-border-color);
+        }
+        
+        // Force white text for all action buttons
+        button[cButton] {
+          &.text-white,
+          &[color="success"],
+          &[color="warning"],
+          &[color="danger"] {
+            color: white !important;
+            
+            .me-1, .me-2, svg {
+              color: white !important;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Override styling for first column - force white background
+  .col-lg-4:first-child .border.rounded {
+    background: white !important;
+    border: 1px solid var(--cui-border-color) !important;
+    color: var(--cui-body-color) !important;
+    
+    .text-center {
+      color: var(--cui-body-color) !important;
+      
+      h6 {
+        color: var(--cui-body-color) !important;
+      }
+      
+      .text-muted {
+        color: var(--cui-gray-600) !important;
+      }
+      
+      .ms-2, .badge {
+        background: var(--cui-gray-100) !important;
+        color: var(--cui-body-color) !important;
+        border: 1px solid var(--cui-border-color);
+      }
+    }
+    
+    // Edit button for theoretical hours
+    .d-flex.align-items-center.justify-content-center.gap-2 {
+      button {
+        background: transparent !important;
+        border: none !important;
+        color: var(--cui-body-color) !important;
+        
+        &:hover {
+          background: var(--cui-gray-100) !important;
+          border: none !important;
+        }
+        
+        svg {
+          color: var(--cui-body-color) !important;
+        }
+      }
+    }
+    
+    // Status buttons styling for white background
+    .d-flex.justify-content-center.gap-3 {
+      button {
+        backdrop-filter: none;
+        background: var(--cui-gray-100) !important;
+        border: 1px solid var(--cui-border-color) !important;
+        color: var(--cui-body-color) !important;
+        
+        &:hover {
+          background: var(--cui-gray-200) !important;
+          transform: translateY(-2px);
+          border-color: var(--cui-border-color) !important;
+        }
+        
+        &.btn-success, &.btn-danger, &.btn-warning, &.btn-secondary {
+          background: var(--cui-gray-100) !important;
+          border: 1px solid var(--cui-border-color) !important;
+          color: var(--cui-body-color) !important;
+        }
+        
+        span {
+          color: var(--cui-body-color) !important;
+        }
+        
+        svg {
+          color: var(--cui-body-color) !important;
+        }
+      }
+    }
+    
+    // Cancel button styling for white background
+    .btn-outline-danger {
+      background: rgba(220, 53, 69, 0.1) !important;
+      border: 1px solid rgba(220, 53, 69, 0.3) !important;
+      color: #dc3545 !important;
+      
+      &:hover {
+        background: rgba(220, 53, 69, 0.2) !important;
+        border-color: rgba(220, 53, 69, 0.5) !important;
+        color: #dc3545 !important;
+      }
+      
+      svg {
+        color: #dc3545 !important;
+      }
+    }
+  }
+
+  // Status buttons with cool colors and smooth styling - force white text
+  .status-button {
+    border: 2px solid !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+    min-height: 50px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: white !important;
+    
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover:not(:disabled):before {
+      left: 100%;
+    }
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      color: white !important;
+    }
+    
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.9;
+      transform: none !important;
+      color: white !important;
+      
+      &:hover {
+        transform: none !important;
+        color: white !important;
+      }
+    }
+    
+    .edit-icon {
+      flex-shrink: 0;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+      color: white !important;
+    }
+    
+    &:hover:not(:disabled) .edit-icon {
+      opacity: 1;
+      color: white !important;
+    }
+    
+    // Force white text for all content with high specificity
+    .fw-semibold, 
+    .text-center, 
+    div, 
+    span, 
+    .d-flex, 
+    .align-items-center, 
+    .justify-content-between,
+    .flex-grow-1 {
+      color: white !important;
+      
+      .fw-semibold {
+        color: white !important;
+      }
+    }
+    
+    // Target specific button content structure
+    .d-flex.align-items-center.justify-content-between.w-100 {
+      color: white !important;
+      
+      .text-center.flex-grow-1 {
+        color: white !important;
+        
+        .fw-semibold {
+          color: white !important;
+        }
+      }
+    }
+    
+    // Tax Stamp Button Styles
+    &.tax-stamp-button {
+      color: white !important;
+      
+      &.status-paid {
+        background: linear-gradient(135deg, #059212, #059212) !important;
+        border-color: #059212 !important;
+        color: white !important;
+        
+        * {
+          color: white !important;
+        }
+      }
+      
+      &.status-pending {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        border-color: #2563eb !important;
+        color: white !important;
+        
+        * {
+          color: white !important;
+        }
+        
+        &:hover:not(:disabled) {
+          background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+          color: white !important;
+          
+          * {
+            color: white !important;
+          }
+        }
+      }
+      
+      &.status-not-paid {
+        background: linear-gradient(135deg, #64748b, #475569) !important;
+        border-color: #475569 !important;
+        color: white !important;
+        
+        * {
+          color: white !important;
+        }
+        
+        &:hover:not(:disabled) {
+          background: linear-gradient(135deg, #475569, #334155) !important;
+          color: white !important;
+          
+          * {
+            color: white !important;
+          }
+        }
+      }
+    }
+    
+    // Medical Visit Button Styles
+    &.medical-visit-button {
+      color: white !important;
+      
+      &.status-completed {
+        background: linear-gradient(135deg, #059212, #059212) !important;
+        border-color: #059212 !important;
+        color: white !important;
+        
+        * {
+          color: white !important;
+        }
+      }
+      
+      &.status-pending {
+        background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+        border-color: #0891b2 !important;
+        color: white !important;
+        
+        * {
+          color: white !important;
+        }
+        
+        &:hover:not(:disabled) {
+          background: linear-gradient(135deg, #0891b2, #0e7490) !important;
+          color: white !important;
+          
+          * {
+            color: white !important;
+          }
+        }
+      }
+      
+      &.status-not-requested {
+        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+        border-color: #4b5563 !important;
+        color: white !important;
+        
+        * {
+          color: white !important;
+        }
+        
+        &:hover:not(:disabled) {
+          background: linear-gradient(135deg, #4b5563, #374151) !important;
+          color: white !important;
+          
+          * {
+            color: white !important;
+          }
+        }
+      }
+    }
+  }
+
+  // Additional high-specificity rules to force white text on status buttons
+  button.status-button.tax-stamp-button,
+  button.status-button.medical-visit-button {
+    color: white !important;
+    
+    &, 
+    &:hover, 
+    &:focus, 
+    &:active, 
+    &:disabled {
+      color: white !important;
+    }
+    
+    // Target all nested elements
+    *, 
+    *:before, 
+    *:after {
+      color: white !important;
+    }
+    
+    .d-flex {
+      color: white !important;
+      
+      .text-center {
+        color: white !important;
+        
+        .fw-semibold {
+          color: white !important;
+        }
+      }
+    }
+  }
+
+  // Ultimate fallback - target by exact structure
+  .col-lg-4 .status-button {
+    color: white !important;
+    
+    .d-flex.align-items-center.justify-content-between.w-100 {
+      color: white !important;
+      
+      .text-center.flex-grow-1 {
+        color: white !important;
+        
+        .fw-semibold {
+          color: white !important;
+        }
+      }
+    }
+  }
+
 }

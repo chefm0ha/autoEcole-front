@@ -344,11 +344,6 @@ export class CandidateDetailsComponent implements OnInit {
       errors.push(`Heures théoriques insuffisantes (${applicationFile.theoreticalHoursCompleted}/20)`);
     }
     
-    // Check practical hours requirement
-    if (applicationFile.practicalHoursCompleted < 20) {
-      errors.push(`Heures pratiques insuffisantes (${applicationFile.practicalHoursCompleted}/20)`);
-    }
-    
     // Check maximum attempts (3 per exam type)
     const examTypeAttempts = applicationFile.exams.filter(e => e.examType === examType).length;
     if (examTypeAttempts >= 3) {
@@ -486,7 +481,6 @@ export class CandidateDetailsComponent implements OnInit {
   // Check if application file is eligible for exams
   isApplicationFileEligibleForExams(file: ApplicationFile): boolean {
     return file.theoreticalHoursCompleted >= 20 && 
-           file.practicalHoursCompleted >= 20 &&
            file.taxStamp === 'PAID' &&
            file.medicalVisit === 'COMPLETED';
   }
@@ -1653,10 +1647,6 @@ export class CandidateDetailsComponent implements OnInit {
       missing.push(`Heures théoriques insuffisantes (${file.theoreticalHoursCompleted}/20)`);
     }
     
-    if (file.practicalHoursCompleted < 20) {
-      missing.push(`Heures pratiques insuffisantes (${file.practicalHoursCompleted}/20)`);
-    }
-    
     if (file.taxStamp !== 'PAID') {
       missing.push('Le timbre fiscal doit être payé');
     }
@@ -1702,6 +1692,41 @@ export class CandidateDetailsComponent implements OnInit {
           // Don't show error to user as the application file was created successfully
         }
       });
+    }
+  }
+
+  // Get formatted status label for display
+  getApplicationFileStatusLabel(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Actif';
+      case 'IN_PROGRESS':
+        return 'En cours';
+      case 'COMPLETED':
+        return 'Réussi';
+      case 'CANCELLED':
+        return 'Annulé';
+      case 'FAILED':
+        return 'Échoué';
+      case 'GRADUATED':
+        return 'Diplômé';
+      case 'THEORY_EXAM_SCHEDULED':
+        return 'Examen théorique programmé';
+      case 'PRACTICAL_EXAM_SCHEDULED':
+        return 'Examen pratique programmé';
+      case 'THEORY_EXAM_PASSED':
+        return 'Examen théorique réussi';
+      case 'PRACTICAL_EXAM_PASSED':
+        return 'Examen pratique réussi';
+      case 'THEORY_EXAM_FAILED':
+        return 'Examen théorique échoué';
+      case 'PRACTICAL_EXAM_FAILED':
+        return 'Examen pratique échoué';
+      default:
+        // For any unknown status, format it nicely
+        return status.split('_').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
     }
   }
 }
