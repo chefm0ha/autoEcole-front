@@ -4,7 +4,10 @@ import { Exam } from './exam.model';
 export interface ApplicationFile {
   id: number;
   category: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'GRADUATED' | 'FAILED';
+  status: 'ACTIVE' | 'EXPIRED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'GRADUATED' | 'FAILED' | 
+          'THEORY_EXAM_SCHEDULED' | 'PRACTICAL_EXAM_SCHEDULED' | 
+          'THEORY_EXAM_PASSED' | 'PRACTICAL_EXAM_PASSED' | 
+          'THEORY_EXAM_FAILED' | 'PRACTICAL_EXAM_FAILED';
   startingDate: string;
   practicalHoursCompleted: number;
   theoreticalHoursCompleted: number;
@@ -23,7 +26,10 @@ export interface ApplicationFileDTO {
   practicalHoursCompleted: number;
   theoreticalHoursCompleted: number;  isActive: boolean;
   startingDate: string;
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED';
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED' | 'ACTIVE' | 'GRADUATED' | 'FAILED' |
+          'THEORY_EXAM_SCHEDULED' | 'PRACTICAL_EXAM_SCHEDULED' | 
+          'THEORY_EXAM_PASSED' | 'PRACTICAL_EXAM_PASSED' | 
+          'THEORY_EXAM_FAILED' | 'PRACTICAL_EXAM_FAILED';
   fileNumber: string;
   taxStamp: string;
   medicalVisit: 'NOT_REQUESTED' | 'PENDING' | 'COMPLETED' | 'EXPIRED';

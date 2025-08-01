@@ -1561,7 +1561,7 @@ export class CandidateDetailsComponent implements OnInit {
       // Clear the error message after 3 seconds
       setTimeout(() => {
         this.error = '';
-      }, 3000);
+      }, 1500);
     } else {
       // Open modal for scheduled exams
       this.openExamStatusModal(exam);
