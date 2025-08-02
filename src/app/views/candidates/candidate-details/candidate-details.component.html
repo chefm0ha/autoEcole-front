@@ -199,7 +199,7 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="text-dark fw-semibold fs-5">{{ file.fileNumber || 'Dossier #' + file.id }}</span>
                               </div>
-                              <c-badge [color]="file.status === 'ACTIVE' || file.status === 'IN_PROGRESS' || file.status === 'COMPLETED' || file.status === 'GRADUATED' || file.status === 'THEORY_EXAM_PASSED' || file.status === 'PRACTICAL_EXAM_PASSED' ? 'success' : file.status === 'FAILED' || file.status === 'CANCELLED' || file.status === 'THEORY_EXAM_FAILED' || file.status === 'PRACTICAL_EXAM_FAILED' ? 'danger' : file.status === 'THEORY_EXAM_SCHEDULED' || file.status === 'PRACTICAL_EXAM_SCHEDULED' ? 'warning' : 'secondary'">
+                              <c-badge [color]="file.status === 'ACTIVE' || file.status === 'IN_PROGRESS' || file.status === 'COMPLETED' || file.status === 'GRADUATED' ? 'success' : file.status === 'FAILED' || file.status === 'CANCELLED' ? 'danger' : file.status === 'EXPIRED' ? 'warning' : 'secondary'">
                                 {{ getApplicationFileStatusLabel(file.status) }}
                               </c-badge>
                             </div>

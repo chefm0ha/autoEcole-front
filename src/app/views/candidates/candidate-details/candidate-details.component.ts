@@ -308,8 +308,7 @@ export class CandidateDetailsComponent implements OnInit {
     
     if (!activeFile) return false;
     
-    return activeFile.theoreticalHoursCompleted >= 20 && 
-           activeFile.practicalHoursCompleted >= 20 &&
+    return activeFile.practicalHoursCompleted >= 20 &&
            activeFile.taxStamp === 'PAID' &&
            activeFile.medicalVisit === 'COMPLETED';
   }
@@ -337,11 +336,6 @@ export class CandidateDetailsComponent implements OnInit {
     // Check if medical visit is completed
     if (applicationFile.medicalVisit !== 'COMPLETED') {
       errors.push('La visite médicale doit être validée avant de programmer un examen');
-    }
-    
-    // Check theoretical hours requirement
-    if (applicationFile.theoreticalHoursCompleted < 20) {
-      errors.push(`Heures théoriques insuffisantes (${applicationFile.theoreticalHoursCompleted}/20)`);
     }
     
     // Check maximum attempts (3 per exam type)
@@ -480,8 +474,7 @@ export class CandidateDetailsComponent implements OnInit {
 
   // Check if application file is eligible for exams
   isApplicationFileEligibleForExams(file: ApplicationFile): boolean {
-    return file.theoreticalHoursCompleted >= 20 && 
-           file.taxStamp === 'PAID' &&
+    return file.taxStamp === 'PAID' &&
            file.medicalVisit === 'COMPLETED';
   }
 
@@ -798,9 +791,7 @@ export class CandidateDetailsComponent implements OnInit {
           
           this.loading = false;
           
-          setTimeout(() => {
-            this.closeApplicationFileModal();
-          }, 1500);
+          this.closeApplicationFileModal();
         },
         error: (error) => {
           console.error('Error creating application file:', error);
@@ -901,9 +892,7 @@ export class CandidateDetailsComponent implements OnInit {
               this.success = message || 'Examen enregistré avec succès!';
               this.loading = false;
               
-              setTimeout(() => {
-                this.closeExamModal();
-              }, 1500);
+              this.closeExamModal();
             },
             error: (error) => {
               console.error('Error refreshing application files:', error);
@@ -971,9 +960,7 @@ export class CandidateDetailsComponent implements OnInit {
           this.success = 'Paiement enregistré avec succès!';
           this.loading = false;
           
-          setTimeout(() => {
-            this.closePaymentModal();
-          }, 1500);
+          this.closePaymentModal();
         },
         error: (error) => {
           console.error('Error saving payment installment:', error);
@@ -1034,9 +1021,7 @@ export class CandidateDetailsComponent implements OnInit {
           this.success = 'Statut du timbre fiscal mis à jour avec succès!';
           this.loading = false;
           
-          setTimeout(() => {
-            this.closeTaxStampModal();
-          }, 1500);
+          this.closeTaxStampModal();
         },
         error: (error) => {
           console.error('Error updating tax stamp status:', error);
@@ -1080,9 +1065,7 @@ export class CandidateDetailsComponent implements OnInit {
           this.success = 'Statut de la visite médicale mis à jour avec succès!';
           this.loading = false;
           
-          setTimeout(() => {
-            this.closeMedicalVisitModal();
-          }, 1500);
+          this.closeMedicalVisitModal();
         },
         error: (error) => {
           console.error('Error updating medical visit status:', error);
@@ -1111,9 +1094,7 @@ export class CandidateDetailsComponent implements OnInit {
             this.loadCandidateDetails(this.candidate.cin);
           }
           
-          setTimeout(() => {
-            this.closeCancelApplicationFileModal();
-          }, 1500);
+          this.closeCancelApplicationFileModal();
         },
         error: (error) => {
           console.error('Error cancelling application file:', error);
@@ -1190,9 +1171,7 @@ export class CandidateDetailsComponent implements OnInit {
           this.loading = false;
           
           // Auto-close modal after showing success message
-          setTimeout(() => {
-            this.closeEditHoursModal();
-          }, 1500);
+          this.closeEditHoursModal();
         },
         error: (error) => {
           console.error('Error updating hours - Full error object:', error);
@@ -1238,9 +1217,7 @@ export class CandidateDetailsComponent implements OnInit {
             this.loading = false;
             
             // Auto-close modal after showing success message
-            setTimeout(() => {
-              this.closeEditHoursModal();
-            }, 1500);
+            this.closeEditHoursModal();
             return;
           }
           
@@ -1641,10 +1618,6 @@ export class CandidateDetailsComponent implements OnInit {
     
     if (file.status !== 'ACTIVE') {
       missing.push('Le dossier doit être actif');
-    }
-    
-    if (file.theoreticalHoursCompleted < 20) {
-      missing.push(`Heures théoriques insuffisantes (${file.theoreticalHoursCompleted}/20)`);
     }
     
     if (file.taxStamp !== 'PAID') {

@@ -134,7 +134,10 @@
             <th class="text-center" style="width: 60px;">Actions</th>
           </tr>
         </thead>        <tbody>
-          <tr *ngFor="let candidate of candidates; let i = index; trackBy: trackByCin">            
+          <tr *ngFor="let candidate of candidates; let i = index; trackBy: trackByCin" 
+              (click)="viewCandidateDetails(candidate)" 
+              style="cursor: pointer;" 
+              class="candidate-row">            
             <td class="fw-semibold">{{ candidate.cin }}</td>
             <td>{{ candidate.firstName }}</td>
             <td>{{ candidate.lastName }}</td>
@@ -153,25 +156,25 @@
             </td>
             <td class="text-center">
               <c-dropdown [class]="getDropdownClass(i, candidates.length)">
-                <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false">
+                <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false" (click)="$event.stopPropagation()">
                   <svg cIcon name="cilOptions"></svg>
                 </button>
                 <ul cDropdownMenu [class]="getDropdownMenuClass(i, candidates.length)">                  
                   <li>
-                    <button cDropdownItem (click)="openEditCandidateModal(candidate)">
+                    <button cDropdownItem (click)="openEditCandidateModal(candidate); $event.stopPropagation()">
                       <svg cIcon name="cilPencil" class="me-2"></svg>
                       Modifier
                     </button>
                   </li>
                   <li>
-                    <button cDropdownItem (click)="viewCandidateDetails(candidate)">
+                    <button cDropdownItem (click)="viewCandidateDetails(candidate); $event.stopPropagation()">
                         <svg cIcon name="cilInfo" class="me-2"></svg>
                         Voir détails
                     </button>
                   </li>
                   <li><hr cDropdownDivider /></li>
                   <li>
-                    <button cDropdownItem (click)="openDeleteModal(candidate)" class="text-danger">
+                    <button cDropdownItem (click)="openDeleteModal(candidate); $event.stopPropagation()" class="text-danger">
                       <svg cIcon name="cilTrash" class="me-2"></svg>
                       Supprimer
                     </button>
