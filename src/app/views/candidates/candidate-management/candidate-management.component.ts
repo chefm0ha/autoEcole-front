@@ -365,7 +365,7 @@ export class CandidateManagementComponent implements OnInit {
             setTimeout(() => {
               this.closeCandidateModal();
               this.router.navigate(['/app/candidates', savedCandidate.cin]);
-            }, 1000);
+            }, 1500);
           }
         },
         error: (error) => {
