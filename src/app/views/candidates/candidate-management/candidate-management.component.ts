@@ -522,9 +522,11 @@ export class CandidateManagementComponent implements OnInit {
     }, 300);
   }
 
+  // Track which dropdown is open
+  openDropdownIndex: number | null = null;
+
   // Methods for dropdown positioning in table rows
   getDropdownClass(index: number, totalCandidates: number): string {
-    // For last 2 rows, add a class to position dropdown upward
     if (index >= totalCandidates - 2 && totalCandidates > 2) {
       return 'dropup';
     }
@@ -532,7 +534,18 @@ export class CandidateManagementComponent implements OnInit {
   }
 
   getDropdownMenuClass(index: number, totalCandidates: number): string {
-    // Always position at the end (right-aligned) for better visibility
     return 'dropdown-menu-end';
+  }
+
+  isDropdownOpen(index: number): boolean {
+    return this.openDropdownIndex === index;
+  }
+
+  toggleDropdown(index: number): void {
+    this.openDropdownIndex = this.openDropdownIndex === index ? null : index;
+  }
+
+  closeDropdown(): void {
+    this.openDropdownIndex = null;
   }
 }

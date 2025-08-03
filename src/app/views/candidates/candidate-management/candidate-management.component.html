@@ -52,7 +52,7 @@
           </select>
         </c-col>
         <c-col [sm]="12" [lg]="2" class="d-flex flex-column flex-sm-row gap-2">
-          <button cButton color="info" (click)="onSearch()" type="button" class="flex-fill">
+          <button cButton color="info" (click)="onSearch()" type="button" class="flex-fill" color="primary" >
             <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
             <span class="d-none d-sm-inline">Rechercher</span>
             <span class="d-sm-none">Recherche</span>
@@ -155,26 +155,26 @@
               </c-badge>
             </td>
             <td class="text-center">
-              <c-dropdown [class]="getDropdownClass(i, candidates.length)">
-                <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false" (click)="$event.stopPropagation()">
+              <c-dropdown [class]="getDropdownClass(i, candidates.length)" [visible]="isDropdownOpen(i)" (visibleChange)="openDropdownIndex = $event ? i : null">
+                <button cButton cDropdownToggle color="ghost" size="sm" [caret]="false" (click)="toggleDropdown(i); $event.stopPropagation()">
                   <svg cIcon name="cilOptions"></svg>
                 </button>
-                <ul cDropdownMenu [class]="getDropdownMenuClass(i, candidates.length)">                  
+                <ul cDropdownMenu [class]="getDropdownMenuClass(i, candidates.length)">
                   <li>
-                    <button cDropdownItem (click)="openEditCandidateModal(candidate); $event.stopPropagation()">
+                    <button cDropdownItem (click)="openEditCandidateModal(candidate); closeDropdown(); $event.stopPropagation()">
                       <svg cIcon name="cilPencil" class="me-2"></svg>
                       Modifier
                     </button>
                   </li>
                   <li>
-                    <button cDropdownItem (click)="viewCandidateDetails(candidate); $event.stopPropagation()">
+                    <button cDropdownItem (click)="viewCandidateDetails(candidate); closeDropdown(); $event.stopPropagation()">
                         <svg cIcon name="cilInfo" class="me-2"></svg>
                         Voir détails
                     </button>
                   </li>
                   <li><hr cDropdownDivider /></li>
                   <li>
-                    <button cDropdownItem (click)="openDeleteModal(candidate); $event.stopPropagation()" class="text-danger">
+                    <button cDropdownItem (click)="openDeleteModal(candidate); closeDropdown(); $event.stopPropagation()" class="text-danger">
                       <svg cIcon name="cilTrash" class="me-2"></svg>
                       Supprimer
                     </button>
@@ -224,11 +224,13 @@
         <li 
           *ngFor="let page of getPages()" 
           class="page-item"
-          [class.active]="page === currentPage">
+          [class.active]="page === currentPage"
+          [class.bg-primary]="page === currentPage">
           <button 
-            class="page-link" 
+            class="page-link text-white" 
             (click)="goToPage(page)"
-            type="button">
+            type="button"
+            [ngClass]="{'bg-primary': page === currentPage, 'text-white': page === currentPage}">
             {{ page + 1 }}
           </button>
         </li>
