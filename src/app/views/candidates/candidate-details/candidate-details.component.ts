@@ -32,7 +32,7 @@ import {
   ProgressBarComponent
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
-import { ApplicationFile, Exam, Payment, PaymentInstallment, ApplicationFileDTO, PaymentDTO, Category, CreateApplicationFileRequest } from '../../../models';
+import { ApplicationFile, Exam, Payment, ApplicationFileDTO, PaymentDTO, Category, CreateApplicationFileRequest } from '../../../models';
 import { ExamDTO, SaveExamRequest } from '../../../models/exam.model';
 import { CandidateDetailsDTO } from '../../../models/candidate.model';
 import { CandidateService } from '../../../services/candidate.service';
@@ -98,6 +98,7 @@ export class CandidateDetailsComponent implements OnInit {
   showMedicalVisitModal = false;
   showExamStatusModal = false;
   showCancelApplicationFileModal = false;
+  showCloseApplicationFileModal = false;
   showEditHoursModal = false;
 
 // Forms
@@ -117,6 +118,8 @@ export class CandidateDetailsComponent implements OnInit {
   selectedApplicationFileForStatus: ApplicationFile | null = null;
   // Selected application file for cancellation
   selectedApplicationFileForCancellation: ApplicationFile | null = null;
+  // Selected application file for closing
+  selectedApplicationFileForClose: ApplicationFile | null = null;
   // Selected exam for status update
   selectedExam: Exam | null = null;
   // Selected application file for hours editing
@@ -530,6 +533,13 @@ export class CandidateDetailsComponent implements OnInit {
     return file.status !== 'GRADUATED' && file.status !== 'CANCELLED';
   }
 
+  // Check if application file can be closed/completed
+  canCloseApplicationFile(file: ApplicationFile | null): boolean {
+    if (!file) return false;
+    // Can close if status is ACTIVE and has both theory and practical exams passed
+    return file.status === 'ACTIVE' && this.hasGraduated(file);
+  }
+
   // Get border color class for application file card
   getApplicationFileBorderColor(file: ApplicationFile): string {
     if (file.status === 'ACTIVE' || file.status === 'IN_PROGRESS' || file.status === 'COMPLETED') {
@@ -615,6 +625,22 @@ export class CandidateDetailsComponent implements OnInit {
   closeCancelApplicationFileModal(): void {
     this.showCancelApplicationFileModal = false;
     this.selectedApplicationFileForCancellation = null;
+    this.error = '';
+    this.success = '';
+  }
+
+  // Open close application file modal
+  openCloseApplicationFileModal(applicationFile: ApplicationFile): void {
+    this.selectedApplicationFileForClose = applicationFile;
+    this.showCloseApplicationFileModal = true;
+    this.error = '';
+    this.success = '';
+  }
+
+  // Close close application file modal
+  closeCloseApplicationFileModal(): void {
+    this.showCloseApplicationFileModal = false;
+    this.selectedApplicationFileForClose = null;
     this.error = '';
     this.success = '';
   }
@@ -1107,6 +1133,85 @@ export class CandidateDetailsComponent implements OnInit {
             errorMessage = 'Dossier de candidature introuvable';
           } else if (error?.status === 500) {
             errorMessage = error.error || 'Erreur serveur interne';
+          } else if (typeof error?.error === 'string') {
+            errorMessage = error.error;
+          } else if (error?.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          this.error = errorMessage;
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  // Close application file
+  onCloseApplicationFile(): void {
+    if (this.selectedApplicationFileForClose) {
+      this.loading = true;
+      this.error = '';
+      
+      this.applicationFileService.closeApplicationFile(this.selectedApplicationFileForClose.id).subscribe({
+        next: (response) => {
+          // Handle the response based on the status
+          if (response.status === 'COMPLETED') {
+            this.success = response.message || 'Dossier de candidature clôturé avec succès!';
+          } else if (response.status === 'CANCELLED') {
+            this.success = response.message || 'Dossier de candidature annulé - non éligible pour la clôture';
+            if (response.reason) {
+              this.success += '. Raison: ' + response.reason;
+            }
+          } else {
+            this.success = response.message || 'Dossier de candidature traité avec succès!';
+          }
+          
+          this.loading = false;
+          
+          // Reload candidate details to get updated data
+          if (this.candidate) {
+            this.loadCandidateDetails(this.candidate.cin);
+          }
+          
+          this.closeCloseApplicationFileModal();
+        },
+        error: (error) => {
+          console.error('Error closing application file:', error);
+          
+          // Handle specific backend error messages
+          let errorMessage = 'Erreur lors de la clôture du dossier';
+          
+          // Handle error codes from backend
+          if (error?.error?.code) {
+            const code = error.error.code;
+            const message = error.error.message;
+            
+            switch (code) {
+              case 100:
+                errorMessage = 'Candidat introuvable';
+                break;
+              case 104:
+                errorMessage = 'Dossier de candidature introuvable';
+                break;
+              case 105:
+                errorMessage = 'Impossible de clôturer un dossier déjà terminé';
+                break;
+              case 404:
+              case 500:
+              case 999:
+                errorMessage = 'Une erreur est survenue';
+                break;
+              default:
+                errorMessage = message || 'Erreur lors de la clôture du dossier';
+            }
+          } else if (error?.status === 400) {
+            errorMessage = error.error?.message || 'Violation des règles métier';
+          } else if (error?.status === 404) {
+            errorMessage = 'Dossier de candidature introuvable';
+          } else if (error?.status === 500) {
+            errorMessage = error.error?.message || 'Erreur serveur interne';
           } else if (typeof error?.error === 'string') {
             errorMessage = error.error;
           } else if (error?.error?.message) {

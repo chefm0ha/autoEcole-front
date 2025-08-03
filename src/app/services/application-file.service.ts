@@ -56,6 +56,16 @@ export class ApplicationFileService {
     ).pipe(catchError(this.handleError));
   }
 
+  // Close/Complete application file
+  closeApplicationFile(applicationFileId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/closeApplicationFile/${applicationFileId}`, 
+      {}, 
+      { 
+        withCredentials: true
+      }
+    ).pipe(catchError(this.handleError));
+  }
+
   // Error handling
   private handleError(error: any): Observable<never> {
     console.error('An error occurred:', error);

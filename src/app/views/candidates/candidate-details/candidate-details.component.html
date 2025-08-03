@@ -165,18 +165,33 @@
                   </button>
                 </c-tabs-list>
 
-                <div class="d-flex justify-content-end" *ngIf="getApplicationFilesByCategory(activeTab || getCategories()[0])">
+                <div class="d-flex justify-content-end gap-2" *ngIf="getApplicationFilesByCategory(activeTab || getCategories()[0])">
+                <!-- Close Application File Button (Complete) -->
                 <button 
                   *ngFor="let file of getApplicationFilesByCategory(activeTab || getCategories()[0]); let i = index"
-                  [hidden]="!canCancelApplicationFile(file)"
+                  [hidden]="!canCloseApplicationFile(file)"
+                  cButton 
+                  color="success" 
+                  size="sm"
+                  (click)="openCloseApplicationFileModal(file)"
+                  [title]="'Clôturer le dossier ' + (file.fileNumber || '#' + file.id)"
+                  class="fw-medium mt-3 text-white">
+                  <svg cIcon name="cilCheckCircle" class="me-1"></svg>
+                  Clôturer le dossier
+                </button>
+                
+                <!-- Cancel Application File Button -->
+                <button 
+                  *ngFor="let file of getApplicationFilesByCategory(activeTab || getCategories()[0]); let i = index"
+                  [hidden]="!canCancelApplicationFile(file) || canCloseApplicationFile(file)"
                   cButton 
                   color="danger" 
                   size="sm"
                   (click)="openCancelApplicationFileModal(file)"
-                  [title]="'Clôturer le dossier ' + (file.fileNumber || '#' + file.id)"
-                  class="fw-medium mt-3 mx-3 text-white">
+                  [title]="'Annuler le dossier ' + (file.fileNumber || '#' + file.id)"
+                  class="fw-medium mt-3 text-white">
                   <svg cIcon name="cilX" class="me-1"></svg>
-                  Clôturer le dossier
+                  Annuler le dossier
                 </button>
               </div>
                 
@@ -1255,6 +1270,82 @@
       class="d-flex align-items-center text-white">
       <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
       Oui, annuler le dossier
+    </button>
+  </c-modal-footer>
+</c-modal>
+
+<!-- Close Application File Modal -->
+<c-modal 
+  [visible]="showCloseApplicationFileModal"
+  (visibleChange)="showCloseApplicationFileModal = $event"
+  [keyboard]="false"
+  [backdrop]="'static'">
+  <c-modal-header>
+    <h4 cModalTitle>
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      Clôturer le dossier de candidature
+    </h4>
+    <button 
+      type="button" 
+      class="btn-close" 
+      aria-label="Close"
+      (click)="closeCloseApplicationFileModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    <div *ngIf="selectedApplicationFileForClose" class="alert alert-info mb-3">
+      <h6><strong>Dossier à clôturer:</strong></h6>
+      <p class="mb-1">
+        <strong>Catégorie:</strong> {{ selectedApplicationFileForClose.category }}
+      </p>
+      <p class="mb-1">
+        <strong>Numéro:</strong> {{ selectedApplicationFileForClose.fileNumber || '#' + selectedApplicationFileForClose.id }}
+      </p>
+      <p class="mb-0">
+        <strong>Statut actuel:</strong> 
+        <c-badge [color]="selectedApplicationFileForClose.status === 'ACTIVE' || selectedApplicationFileForClose.status === 'IN_PROGRESS' || selectedApplicationFileForClose.status === 'COMPLETED' ? 'success' : 'secondary'">
+          {{ 
+            selectedApplicationFileForClose.status === 'ACTIVE' ? 'Actif' : 
+            selectedApplicationFileForClose.status === 'IN_PROGRESS' ? 'En cours' :
+            selectedApplicationFileForClose.status === 'COMPLETED' ? 'Réussi' :
+            selectedApplicationFileForClose.status === 'CANCELLED' ? 'Annulé' :
+            selectedApplicationFileForClose.status === 'GRADUATED' ? 'Diplômé' :
+            selectedApplicationFileForClose.status === 'FAILED' ? 'Échoué' :
+            'Expiré' 
+          }}
+        </c-badge>
+      </p>
+    </div>
+
+    <div class="alert alert-success">
+      <svg cIcon name="cilCheckCircle" class="me-2"></svg>
+      <strong>Félicitations !</strong> Ce candidat est éligible pour la clôture du dossier.
+      <ul class="mt-2 mb-0">
+        <li>Les examens théorique et pratique ont été réussis</li>
+        <li>Le dossier sera marqué comme "Diplômé"</li>
+        <li>Le candidat pourra obtenir son permis de conduire</li>
+      </ul>
+    </div>
+
+    <p>Êtes-vous sûr de vouloir clôturer ce dossier de candidature ?</p>
+  </c-modal-body>
+  
+  <c-modal-footer>
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closeCloseApplicationFileModal()">
+      Annuler
+    </button>
+    <button 
+      cButton 
+      color="success" 
+      (click)="onCloseApplicationFile()"
+      [disabled]="loading"
+      class="d-flex align-items-center text-white">
+      <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
+      Oui, clôturer le dossier
     </button>
   </c-modal-footer>
 </c-modal>
