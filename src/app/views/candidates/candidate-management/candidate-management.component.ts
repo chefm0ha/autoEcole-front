@@ -1,6 +1,7 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { 
   CardComponent, 
   CardHeaderComponent, 
@@ -73,17 +74,21 @@ import { Router } from '@angular/router';
     DropdownDividerDirective
   ]
 })
-export class CandidateManagementComponent implements OnInit {
+export class CandidateManagementComponent implements OnInit, OnDestroy {
   @ViewChild('candidateModal') candidateModal!: TemplateRef<any>;
   @ViewChild('deleteModal') deleteModal!: TemplateRef<any>;
   candidates: CandidateListDTO[] = [];
   candidateForm: FormGroup;
   searchForm: FormGroup;
   loading = false;
+  autoSearching = false; // Separate flag for auto-search loading
   saving = false;
   deleting = false;
   error = '';
   success = '';
+  
+  // RxJS subjects for auto-search
+  private destroy$ = new Subject<void>();
   
   // Pagination
   currentPage = 0;
@@ -158,6 +163,56 @@ export class CandidateManagementComponent implements OnInit {
   ngOnInit(): void {
     // Set default value for isActive to show "Tous"
     this.searchForm.patchValue({ isActive: '' });
+    this.loadCandidates();
+    
+    // Set up auto-search with debouncing
+    this.setupAutoSearch();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private setupAutoSearch(): void {
+    // Listen to changes on text input fields with debouncing
+    this.searchForm.get('firstName')?.valueChanges.pipe(
+      debounceTime(300), // Wait 300ms after user stops typing
+      distinctUntilChanged(), // Only trigger if value actually changed
+      takeUntil(this.destroy$) // Unsubscribe when component is destroyed
+    ).subscribe(() => {
+      this.performAutoSearch();
+    });
+
+    this.searchForm.get('lastName')?.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.performAutoSearch();
+    });
+
+    this.searchForm.get('cin')?.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.performAutoSearch();
+    });
+
+    // Listen to immediate changes on select field (no debouncing needed)
+    this.searchForm.get('isActive')?.valueChanges.pipe(
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.performAutoSearch();
+    });
+  }
+
+  private performAutoSearch(): void {
+    this.isSearchTriggered = true;
+    this.currentPage = 0;
+    this.autoSearching = true;
     this.loadCandidates();
   }
   createCandidateForm(): FormGroup {

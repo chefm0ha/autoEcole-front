@@ -18,30 +18,33 @@
 
   <c-card-body>    <!-- Search and Filters -->
     <form [formGroup]="searchForm" cForm class="mb-4">
+      <div class="mb-3">
+        <small class="text-muted">
+          <svg cIcon name="cilInfo" class="me-1"></svg>
+          La recherche se met à jour automatiquement pendant que vous tapez
+        </small>
+      </div>
       <c-row class="g-3 align-items-end">
         <c-col [sm]="12" [md]="6" [lg]="3">
           <label cLabel class="form-label">Prénom</label>
           <input 
             cFormControl 
             placeholder="Prénom..." 
-            formControlName="firstName"
-            (keyup.enter)="onSearch()">
+            formControlName="firstName">
         </c-col>
         <c-col [sm]="12" [md]="6" [lg]="3">
           <label cLabel class="form-label">Nom</label>
           <input 
             cFormControl 
             placeholder="Nom..." 
-            formControlName="lastName"
-            (keyup.enter)="onSearch()">
+            formControlName="lastName">
         </c-col>
         <c-col [sm]="12" [md]="6" [lg]="2">
           <label cLabel class="form-label">CIN</label>
           <input 
             cFormControl 
             placeholder="CIN..." 
-            formControlName="cin"
-            (keyup.enter)="onSearch()">
+            formControlName="cin">
         </c-col>
         <c-col [sm]="12" [md]="6" [lg]="2">
           <label cLabel class="form-label">Statut</label>
@@ -52,17 +55,19 @@
           </select>
         </c-col>
         <c-col [sm]="12" [lg]="2" class="d-flex flex-column flex-sm-row gap-2">
-          <button cButton color="info" (click)="onSearch()" type="button" class="flex-fill" color="primary" >
-            <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
-            <span class="d-none d-sm-inline">Rechercher</span>
-            <span class="d-sm-none">Recherche</span>
+          <button cButton color="info" (click)="onSearch()" type="button" class="flex-fill" color="primary" title="Actualiser la recherche">
+            <svg cIcon name="cilReload" class="me-1"></svg>
+            <span class="d-none d-sm-inline">Actualiser</span>
+            <span class="d-sm-none">Refresh</span>
           </button>
           <button cButton color="secondary" (click)="clearSearch()" type="button" title="Effacer" class="flex-shrink-0">
             <svg cIcon name="cilX"></svg>
           </button>
         </c-col>
       </c-row>
-    </form>    <!-- Results Info -->
+    </form>
+
+    <!-- Results Info -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
       <div class="text-muted">
         {{ totalElements }} candidat(s) trouvé(s)
