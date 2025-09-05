@@ -12,6 +12,7 @@ export interface SaveExamRequest {
   examType: 'THEORY' | 'PRACTICAL';
   date: string;
   status: 'PASSED' | 'FAILED' | 'SCHEDULED';
+  immatriculation?: string; // Required for practical exams
 }
 
 // DTO for exam response from API

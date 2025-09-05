@@ -780,6 +780,35 @@
             {{ getFieldError(examForm, 'status') }}
           </c-form-feedback>
         </c-col>
+
+        <!-- Vehicle selection for practical exams -->
+        <c-col md="12" *ngIf="examForm.get('examType')?.value === 'PRACTICAL'">
+          <label cLabel for="vehicleSelect">Véhicule *</label>
+          <select 
+            cFormSelect 
+            id="vehicleSelect" 
+            formControlName="immatriculation"
+            class="form-select"
+            [class.is-invalid]="isFieldInvalid(examForm, 'immatriculation')">
+            <option value="" disabled>Choisir un véhicule</option>
+            <option 
+              *ngFor="let vehicle of availableVehicles" 
+              [value]="vehicle.immatriculation"
+              [disabled]="!isVehicleAvailable(vehicle)"
+              [ngClass]="{
+                'text-muted': !isVehicleAvailable(vehicle),
+                'fw-bold': isVehicleAvailable(vehicle)
+              }">
+              {{ vehicle.immatriculation }} - {{ vehicle.vehicleBrand || 'N/A' }}
+              <span *ngIf="!isVehicleAvailable(vehicle)" class="text-muted"> - Indisponible</span>
+            </option>
+          </select>
+          <c-form-feedback 
+            *ngIf="isFieldInvalid(examForm, 'immatriculation')" 
+            [valid]="false">
+            {{ getFieldError(examForm, 'immatriculation') }}
+          </c-form-feedback>
+        </c-col>
       </c-row>
     </form>
   </c-modal-body>
@@ -793,7 +822,7 @@
       cButton 
       color="primary" 
       (click)="onSubmitExam()"
-      [disabled]="loading || !examForm.get('examType')?.value || examForm.get('date')?.invalid || examForm.get('status')?.invalid">
+      [disabled]="loading || !examForm.get('examType')?.value || examForm.get('date')?.invalid || examForm.get('status')?.invalid || (examForm.get('examType')?.value === 'PRACTICAL' && examForm.get('immatriculation')?.invalid)">
       <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
       Enregistrer l'examen
     </button>
