@@ -32,7 +32,7 @@ import {
   ProgressBarComponent
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
-import { ApplicationFile, Exam, Payment, ApplicationFileDTO, PaymentDTO, Category, CreateApplicationFileRequest } from '../../../models';
+import { ApplicationFile, Exam, Payment, ApplicationFileDTO, PaymentDTO, Category, CreateApplicationFileRequest, Vehicle } from '../../../models';
 import { ExamDTO, SaveExamRequest } from '../../../models/exam.model';
 import { CandidateDetailsDTO } from '../../../models/candidate.model';
 import { CandidateService } from '../../../services/candidate.service';
@@ -40,6 +40,7 @@ import { ApplicationFileService } from '../../../services/application-file.servi
 import { PaymentService } from '../../../services/payment.service';
 import { CategoryService } from '../../../services/category.service';
 import { ExamService } from '../../../services/exam.service';
+import { VehicleService } from '../../../services/vehicle.service';
 
 @Component({
   selector: 'app-candidate-details',
@@ -90,7 +91,10 @@ export class CandidateDetailsComponent implements OnInit {
   showArchive = false;
   
   // Available data for dropdowns
-  categories: Category[] = [];  // Modal states
+  categories: Category[] = [];
+  availableVehicles: Vehicle[] = [];
+  
+  // Modal states
   showApplicationFileModal = false;
   showExamModal = false;
   showPaymentModal = false;
@@ -142,7 +146,9 @@ export class CandidateDetailsComponent implements OnInit {
     private applicationFileService: ApplicationFileService,
     private paymentService: PaymentService,
     private categoryService: CategoryService,
-    private examService: ExamService  ) {
+    private examService: ExamService,
+    private vehicleService: VehicleService
+  ) {
     this.applicationFileForm = this.createApplicationFileForm();
     this.examForm = this.createExamForm();
     this.paymentForm = this.createPaymentForm();
@@ -240,7 +246,8 @@ export class CandidateDetailsComponent implements OnInit {
     const form = this.fb.group({
       examType: [''], // No validator needed as it's automatically set
       date: ['', [Validators.required, this.chronologicalDateValidator.bind(this)]],
-      status: ['', Validators.required]
+      status: ['', Validators.required],
+      immatriculation: [''] // Will be required conditionally for practical exams
     });
     
     return form;
@@ -556,7 +563,33 @@ export class CandidateDetailsComponent implements OnInit {
     this.showExamModal = false;
     this.examForm.reset();
     this.selectedApplicationFile = null;
-    this.error = '';    this.success = '';
+    this.availableVehicles = [];
+    this.error = '';
+    this.success = '';
+  }
+
+  // Methods for handling vehicle selection
+  loadVehiclesByCategory(applicationFileId: number): void {
+    console.log('Loading vehicles for application file ID:', applicationFileId);
+    this.vehicleService.getVehiclesByCategory(applicationFileId).subscribe({
+      next: (vehicles) => {
+        console.log('Vehicles loaded successfully:', vehicles);
+        this.availableVehicles = vehicles;
+        if (vehicles.length === 0) {
+          console.warn('No vehicles found for this category');
+          this.error = 'Aucun véhicule trouvé pour cette catégorie';
+        }
+      },
+      error: (error) => {
+        console.error('Error loading vehicles:', error);
+        this.error = error.message || 'Erreur lors du chargement des véhicules';
+      }
+    });
+  }
+
+  // Check if vehicle is available (quota > 0)
+  isVehicleAvailable(vehicle: Vehicle): boolean {
+    return (vehicle.quota || 1) > 0; // Default to available if quota is undefined
   }
   
   // Open tax stamp modal
@@ -695,6 +728,20 @@ export class CandidateDetailsComponent implements OnInit {
       examType: nextExamType,
       status: 'SCHEDULED' // Default to scheduled
     });
+
+    // Load vehicles if it's a practical exam
+    if (nextExamType === 'PRACTICAL') {
+      this.loadVehiclesByCategory(file.id);
+      // Make immatriculation required for practical exams
+      this.examForm.get('immatriculation')?.setValidators([Validators.required]);
+    } else {
+      // Clear vehicles for theory exams
+      this.availableVehicles = [];
+      // Remove immatriculation requirement for theory exams
+      this.examForm.get('immatriculation')?.clearValidators();
+    }
+    
+    this.examForm.get('immatriculation')?.updateValueAndValidity();
     
     // Update the date field validator to reflect the new application file context
     const dateControl = this.examForm.get('date');
@@ -705,6 +752,22 @@ export class CandidateDetailsComponent implements OnInit {
     this.showExamModal = true;
     this.error = '';
     this.success = '';
+  }
+
+  // Test method to check backend connectivity
+  testVehicleEndpoint(): void {
+    console.log('Testing vehicle endpoint...');
+    this.vehicleService.getAllVehicles().subscribe({
+      next: (vehicles) => {
+        console.log('All vehicles retrieved successfully:', vehicles);
+        if (vehicles.length === 0) {
+          console.warn('No vehicles found in database');
+        }
+      },
+      error: (error) => {
+        console.error('Error testing vehicle endpoint:', error);
+      }
+    });
   }
 
   // Submit exam status update
@@ -889,7 +952,8 @@ export class CandidateDetailsComponent implements OnInit {
       const examRequest: SaveExamRequest = {
         examType: formValue.examType,
         date: formValue.date,
-        status: formValue.status
+        status: formValue.status,
+        immatriculation: formValue.examType === 'PRACTICAL' ? formValue.immatriculation : undefined
       };
         this.examService.saveExam(this.selectedApplicationFile.id, examRequest).subscribe({
         next: (message) => {
