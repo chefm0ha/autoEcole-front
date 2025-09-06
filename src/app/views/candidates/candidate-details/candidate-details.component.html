@@ -800,7 +800,7 @@
                 'fw-bold': isVehicleAvailable(vehicle)
               }">
               {{ vehicle.immatriculation }} - {{ vehicle.vehicleBrand || 'N/A' }}
-              <span *ngIf="!isVehicleAvailable(vehicle)" class="text-muted"> - Indisponible</span>
+              <span *ngIf="!isVehicleAvailable(vehicle)" class="text-muted"> - Quota épouisé</span>
             </option>
           </select>
           <c-form-feedback 

@@ -589,7 +589,10 @@ export class CandidateDetailsComponent implements OnInit {
 
   // Check if vehicle is available (quota > 0)
   isVehicleAvailable(vehicle: Vehicle): boolean {
-    return (vehicle.quota || 1) > 0; // Default to available if quota is undefined
+  // Unavailable when quota is explicitly 0; otherwise available
+  if (vehicle.quota === 0) return false;
+  if (vehicle.quota == null) return true; // undefined or null => treat as available
+  return vehicle.quota > 0;
   }
   
   // Open tax stamp modal
