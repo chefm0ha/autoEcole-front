@@ -570,10 +570,8 @@ export class CandidateDetailsComponent implements OnInit {
 
   // Methods for handling vehicle selection
   loadVehiclesByCategory(applicationFileId: number): void {
-    console.log('Loading vehicles for application file ID:', applicationFileId);
     this.vehicleService.getVehiclesByCategory(applicationFileId).subscribe({
       next: (vehicles) => {
-        console.log('Vehicles loaded successfully:', vehicles);
         this.availableVehicles = vehicles;
         if (vehicles.length === 0) {
           console.warn('No vehicles found for this category');
@@ -759,10 +757,8 @@ export class CandidateDetailsComponent implements OnInit {
 
   // Test method to check backend connectivity
   testVehicleEndpoint(): void {
-    console.log('Testing vehicle endpoint...');
     this.vehicleService.getAllVehicles().subscribe({
       next: (vehicles) => {
-        console.log('All vehicles retrieved successfully:', vehicles);
         if (vehicles.length === 0) {
           console.warn('No vehicles found in database');
         }
@@ -1308,7 +1304,6 @@ export class CandidateDetailsComponent implements OnInit {
       
       updateObservable.subscribe({
         next: (message) => {
-          console.log('Hours update success:', message);
           
           // Update the local application file object
           if (this.selectedApplicationFileForHours && this.editingHoursType) {
@@ -1354,7 +1349,6 @@ export class CandidateDetailsComponent implements OnInit {
           // Check if it's actually a successful response that's being treated as an error
           if (error?.status === 200 || (error?.error && typeof error.error === 'string' && error.error.includes('successfully'))) {
             // This is actually a success - Angular sometimes treats text responses as errors
-            console.log('Treating as success despite error callback');
             
             // Update the local data
             if (this.selectedApplicationFileForHours && this.editingHoursType) {
@@ -1830,7 +1824,6 @@ export class CandidateDetailsComponent implements OnInit {
         next: (updatedCandidateResponse) => {
           // Update local candidate object
           this.candidate.isActive = true;
-          console.log('Candidate activated successfully after creating application file');
         },
         error: (error) => {
           console.error('Error activating candidate:', error);

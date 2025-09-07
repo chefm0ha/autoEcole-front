@@ -13,7 +13,6 @@ export class VehicleService {
   constructor(private http: HttpClient) { }
 
   getVehiclesByCategory(applicationFileId: number): Observable<Vehicle[]> {
-    console.log(`Fetching vehicles for application file ID: ${applicationFileId}`);
     return this.http.get<Vehicle[]>(`${this.apiUrl}/vehicle/getVehiclesByCategory/${applicationFileId}`, {
       withCredentials: true
     })
