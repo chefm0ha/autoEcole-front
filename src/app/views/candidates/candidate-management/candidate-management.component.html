@@ -1,5 +1,5 @@
 <!-- Main Content Container -->
-<div class="container-fluid px-2 px-md-4">
+<div class="container-fluid px-2 px-md-4 pb-2">
   <c-card>
     <c-card-header class="d-flex justify-content-between align-items-center">
       <h5 class="mb-0">
@@ -98,9 +98,10 @@
     <!-- Candidates Table -->
     <div *ngIf="!loading && candidates.length > 0" class="table-container">
       <div class="table-responsive">
-        <table cTable [hover]="true" [striped]="true" class="mb-0">        <thead>
+        <table cTable [hover]="true" [striped]="true" class="mb-0 responsive-table" aria-label="Liste des candidats">        <thead>
           <tr>
             <th 
+              scope="col"
               class="sortable" 
               (click)="sort('cin')"
               style="cursor: pointer; min-width: 100px;">
@@ -108,6 +109,7 @@
               <svg cIcon [name]="getSortIcon('cin')" size="sm" class="ms-1"></svg>
             </th>
             <th 
+              scope="col"
               class="sortable" 
               (click)="sort('firstName')"
               style="cursor: pointer; min-width: 120px;">
@@ -115,23 +117,25 @@
               <svg cIcon [name]="getSortIcon('firstName')" size="sm" class="ms-1"></svg>
             </th>
             <th 
+              scope="col"
               class="sortable" 
               (click)="sort('lastName')"
               style="cursor: pointer; min-width: 120px;">
               Nom 
               <svg cIcon [name]="getSortIcon('lastName')" size="sm" class="ms-1"></svg>            
             </th>
-            <th style="min-width: 120px;">Téléphone</th>
-            <th style="min-width: 120px;" class="d-none d-md-table-cell">Date de naissance</th>
+            <th scope="col" style="min-width: 120px;">Téléphone</th>
+            <th scope="col" style="min-width: 120px;">Date de naissance</th>
             <th 
-              class="sortable d-none d-md-table-cell" 
+              scope="col"
+              class="sortable" 
               (click)="sort('startingDate')"
               style="cursor: pointer; min-width: 140px;">
               Date d'inscription 
               <svg cIcon [name]="getSortIcon('startingDate')" size="sm" class="ms-1"></svg>
             </th>
-            <th style="min-width: 80px;">Statut</th>
-            <th class="text-center" style="width: 60px;">Actions</th>
+            <th scope="col" style="min-width: 80px;">Statut</th>
+            <th scope="col" class="text-center" style="width: 60px;">Actions</th>
           </tr>
         </thead>        <tbody>
           <tr *ngFor="let candidate of candidates; let i = index; trackBy: trackByCin" 
@@ -142,8 +146,8 @@
             <td>{{ candidate.firstName }}</td>
             <td>{{ candidate.lastName }}</td>
             <td class="text-nowrap">{{ formatPhone(candidate.gsm) }}</td>
-            <td class="d-none d-md-table-cell text-nowrap">{{ formatDate(candidate.birthDay) }}</td>
-            <td class="d-none d-md-table-cell">
+            <td class="text-nowrap">{{ formatDate(candidate.birthDay) }}</td>
+            <td>
               <span *ngIf="candidate.startingDate" class="text-nowrap">{{ formatDate(candidate.startingDate) }}</span>
               <span *ngIf="!candidate.startingDate" class="text-muted">-</span>
             </td>

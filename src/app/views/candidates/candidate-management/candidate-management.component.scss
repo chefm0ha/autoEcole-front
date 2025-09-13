@@ -4,8 +4,7 @@
   max-width: 100%;
   overflow-x: hidden;
   // Ensure proper stacking context for dropdowns
-  position: relative;
-  z-index: 1;
+  position: relative; // removed z-index to avoid creating a new stacking context that could interfere with modal layering
 
   .sortable {
     user-select: none;
@@ -31,16 +30,19 @@
 
   .table-responsive {
     border-radius: 0.375rem;
-    // Allow dropdowns to show outside table bounds
-    overflow: visible !important; // Force override any inherited overflow settings
-    // Ensure tables don't cause horizontal overflow on x-axis only
+    // Enable horizontal scrolling when content exceeds container width
     overflow-x: auto;
+    overflow-y: visible; // Allow dropdowns to show outside table bounds vertically
     max-width: 100%;
     -webkit-overflow-scrolling: touch;
+    // Ensure smooth scrolling on touch devices
+    scroll-behavior: smooth;
     
     table {
       margin-bottom: 0;
       width: 100%;
+      // Set minimum width to ensure table doesn't collapse on small screens
+      min-width: 800px;
       table-layout: auto;
       
       th {
@@ -49,35 +51,55 @@
         font-weight: 600;
         white-space: nowrap;
         min-width: 100px;
+        // Ensure headers remain readable on all screen sizes
+        font-size: 0.875rem;
+        padding: 0.75rem 0.5rem;
         
-        // Allow text wrapping on smaller screens
-        @media (max-width: 768px) {
-          white-space: normal;
+        // Responsive font sizing for very small screens
+        @media (max-width: 480px) {
           font-size: 0.75rem;
-          min-width: 80px;
+          padding: 0.5rem 0.375rem;
         }
       }
       
       td {
         vertical-align: middle;
         word-wrap: break-word;
-        max-width: 200px;
+        white-space: nowrap;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
         
-        @media (max-width: 768px) {
+        // Responsive padding and font size for smaller screens
+        @media (max-width: 480px) {
           font-size: 0.75rem;
-          max-width: 120px;
+          padding: 0.5rem 0.375rem;
         }
         
         // Specific column optimizations
         &:first-child {
           // CIN column
           font-weight: 600;
-          max-width: 120px;
+          min-width: 100px;
+        }
+        
+        &:nth-child(2), &:nth-child(3) {
+          // Name columns
+          min-width: 120px;
         }
         
         &:nth-child(4) {
           // Phone column
-          white-space: nowrap;
+          min-width: 140px;
+        }
+        
+        &:nth-child(5), &:nth-child(6) {
+          // Date columns
+          min-width: 120px;
+        }
+        
+        &:nth-child(7) {
+          // Status column
+          min-width: 80px;
         }
         
         &:last-child {
@@ -87,6 +109,22 @@
           overflow: visible !important; // Ensure dropdown can extend beyond cell bounds
         }
       }
+    }
+  }
+
+  // Responsive table class for enhanced mobile experience
+  .responsive-table {
+    // Ensure table maintains structure on all screen sizes
+    width: 100%;
+    min-width: 800px; // Minimum width to prevent column collapse
+    
+    // Smooth horizontal scrolling experience
+    @media (max-width: 768px) {
+      min-width: 900px; // Slightly wider on mobile for better readability
+    }
+    
+    @media (max-width: 480px) {
+      min-width: 800px; // Compact but readable on very small screens
     }
   }
 
@@ -118,7 +156,8 @@
       position: absolute;
       top: 100%;
       bottom: auto;
-      z-index: 9999 !important; // High z-index to ensure dropdown appears above all elements
+      // Keep dropdown above table content but below modal (modal ~1055, backdrop ~1050)
+      z-index: 1040 !important;
       box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
       border: 1px solid rgba(0, 0, 0, 0.15);
       border-radius: 0.375rem;
@@ -345,21 +384,6 @@
         }
       }
     }
-
-    // Hide less important columns on small screens
-    .table-responsive {
-      table {
-        th:nth-child(5), // Date de naissance
-        td:nth-child(5) {
-          display: none;
-        }
-        
-        th:nth-child(6), // Date d'inscription
-        td:nth-child(6) {
-          display: none;
-        }
-      }
-    }
   }
 
   // Styles pour le dropdown des villes
@@ -378,4 +402,15 @@
       }
     }
   }
+
+  // --- Modal z-index fixes ---
+  // CoreUI / Bootstrap modals rely on specific z-index ordering. Because we previously
+  // boosted dropdowns, we explicitly set modal/backdrop layering so the modal remains
+  // interactive and not covered by any high-z elements.
+  ::ng-deep .modal-backdrop { z-index: 1050 !important; }
+  ::ng-deep .modal { z-index: 1055 !important; }
+  ::ng-deep .modal .modal-content { position: relative; z-index: 1060; }
+  // Ensure modal content always receives pointer events even if some parent accidentally
+  // applies pointer-events: none.
+  ::ng-deep .modal.show, ::ng-deep .modal .modal-content { pointer-events: auto; }
 }

@@ -41,6 +41,7 @@ import { PaymentService } from '../../../services/payment.service';
 import { CategoryService } from '../../../services/category.service';
 import { ExamService } from '../../../services/exam.service';
 import { VehicleService } from '../../../services/vehicle.service';
+import { AuthService } from '../../../auth/auth.service';
 
 @Component({
   selector: 'app-candidate-details',
@@ -147,7 +148,8 @@ export class CandidateDetailsComponent implements OnInit {
     private paymentService: PaymentService,
     private categoryService: CategoryService,
     private examService: ExamService,
-    private vehicleService: VehicleService
+    private vehicleService: VehicleService,
+    private authService: AuthService
   ) {
     this.applicationFileForm = this.createApplicationFileForm();
     this.examForm = this.createExamForm();
@@ -1046,7 +1048,12 @@ export class CandidateDetailsComponent implements OnInit {
             this.applicationFiles[fileIndex].payment = this.selectedApplicationFile!.payment;
           }
           
-          this.success = 'Paiement enregistré avec succès!';
+          // Message différent selon rôle
+          if (this.isAdmin()) {
+            this.success = 'Paiement enregistré et validé avec succès !';
+          } else {
+            this.success = 'Paiement ajouté et en attente de validation par un administrateur.';
+          }
           this.loading = false;
           
           this.closePaymentModal();
@@ -1597,7 +1604,8 @@ export class CandidateDetailsComponent implements OnInit {
         id: installment.id,
         installmentNumber: installment.installmentNumber,
         amount: installment.amount,
-        date: installment.date
+        date: installment.date,
+        status: installment.status as any
       }))
     };
   }
@@ -1613,6 +1621,60 @@ export class CandidateDetailsComponent implements OnInit {
       default:
         return 'PENDING';
     }
+  }
+
+  // Helpers rôle utilisateur
+  isAdmin(): boolean {
+    return this.authService.currentUser?.role === 'ADMIN';
+  }
+
+  isStaff(): boolean {
+    return this.authService.currentUser?.role === 'STAFF';
+  }
+
+  // Libellé statut tranche
+  getInstallmentStatusLabel(status?: 'PENDING' | 'VALIDATED'): string {
+    switch (status) {
+      case 'VALIDATED':
+        return 'Validé';
+      case 'PENDING':
+      default:
+        return 'En attente';
+    }
+  }
+
+  // Couleur badge statut tranche
+  getInstallmentStatusColor(status?: 'PENDING' | 'VALIDATED'): string {
+    switch (status) {
+      case 'VALIDATED':
+        return 'success';
+      case 'PENDING':
+      default:
+        return 'warning';
+    }
+  }
+
+  // Validation d'une tranche (ADMIN uniquement)
+  validateInstallment(installmentId: number, applicationFile: ApplicationFile): void {
+    if (!this.isAdmin()) return;
+    this.loading = true;
+    this.error = '';
+    this.paymentService.validatePaymentInstallment(installmentId).subscribe({
+      next: (paymentDTO) => {
+        // Mettre à jour le paiement du dossier
+        applicationFile.payment = this.convertToPayment(paymentDTO);
+        if (this.selectedApplicationFile && this.selectedApplicationFile.id === applicationFile.id) {
+          this.selectedApplicationFile.payment = applicationFile.payment;
+        }
+        this.success = 'Tranche validée avec succès !';
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Erreur validation tranche', error);
+        this.error = 'Erreur lors de la validation de la tranche.';
+        this.loading = false;
+      }
+    });
   }
 
   // Get tax stamp status label

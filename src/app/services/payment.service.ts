@@ -32,4 +32,16 @@ export class PaymentService {
       { withCredentials: true }
     );
   }
+
+  /**
+   * Validate a pending payment installment (admin action)
+   * @param installmentId ID de la tranche de paiement
+   */
+  validatePaymentInstallment(installmentId: number): Observable<PaymentDTO> {
+    return this.http.put<PaymentDTO>(
+      `${this.baseUrl}/paymentInstallment/validatePaymentInstallment/${installmentId}`,
+      {},
+      { withCredentials: true }
+    );
+  }
 }

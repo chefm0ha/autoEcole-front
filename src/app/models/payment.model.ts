@@ -3,6 +3,8 @@ export interface PaymentInstallment {
   installmentNumber: number;
   amount: number;
   date: string;
+  // Nouveau: statut de la tranche de paiement (ex: PENDING, VALIDATED)
+  status?: 'PENDING' | 'VALIDATED';
 }
 
 export interface Payment {
@@ -29,4 +31,5 @@ export interface PaymentInstallmentDTO {
   amount: number;
   date: string;
   installmentNumber: number;
+  status?: 'PENDING' | 'VALIDATED';
 }
