@@ -209,7 +209,7 @@
                         
                         <!-- Column 1: Candidate Info -->
                         <div class="col-lg-4">
-                          <div class="border rounded p-4 h-100 bg-white" [class]="getApplicationFileBorderColor(file)">
+                          <div class="border rounded p-4 h-100 themed-card" [class]="getApplicationFileBorderColor(file)">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                               <div class="d-flex align-items-center gap-2">
                                 <span class="text-dark fw-semibold fs-5">{{ file.fileNumber || 'Dossier #' + file.id }}</span>
@@ -253,7 +253,7 @@
                                 size="sm"
                                 (click)="openTaxStampModal(file)"
                                 [disabled]="file.taxStamp === 'PAID'"
-                                class="status-button tax-stamp-button text-center w-100"
+                                class="status-button tax-stamp-button text-center w-100 force-text-white"
                                 [ngClass]="{
                                   'status-paid': file.taxStamp === 'PAID',
                                   'status-pending': file.taxStamp === 'PENDING',
@@ -262,7 +262,11 @@
                                 <div class="d-flex align-items-center justify-content-between w-100">
                                   <div class="text-center flex-grow-1">
                                     <div class="fw-semibold">
-                                      {{ file.taxStamp === 'PAID' ? 'Timbre fiscal payé' : 'Timbre fiscal' }}
+                                      {{ file.taxStamp === 'PAID' 
+                                        ? 'Timbre fiscal payé'
+                                        : (file.taxStamp === 'PENDING' 
+                                          ? 'Le timbre fiscal doit être payé'
+                                          : 'Le timbre fiscal doit être payé') }}
                                     </div>
                                   </div>
                                   <svg *ngIf="file.taxStamp !== 'PAID'" cIcon name="cilPencil" size="sm" class="edit-icon"></svg>
@@ -273,7 +277,7 @@
                                 size="sm"
                                 (click)="openMedicalVisitModal(file)"
                                 [disabled]="file.medicalVisit === 'COMPLETED'"
-                                class="status-button medical-visit-button text-center w-100"
+                                class="status-button medical-visit-button text-center w-100 force-white-text"
                                 [ngClass]="{
                                   'status-completed': file.medicalVisit === 'COMPLETED',
                                   'status-pending': file.medicalVisit === 'PENDING',
@@ -282,7 +286,11 @@
                                 <div class="d-flex align-items-center justify-content-between w-100">
                                   <div class="text-center flex-grow-1">
                                     <div class="fw-semibold">
-                                      {{ file.medicalVisit === 'COMPLETED' ? 'Visite médicale validé' : 'Visite médicale' }}
+                                      {{ file.medicalVisit === 'COMPLETED' 
+                                        ? 'Visite médicale validée'
+                                        : (file.medicalVisit === 'PENDING' 
+                                          ? 'La visite médicale doit être validée'
+                                          : 'La visite médicale doit être validée') }}
                                     </div>
                                   </div>
                                   <svg *ngIf="file.medicalVisit !== 'COMPLETED'" cIcon name="cilPencil" size="sm" class="edit-icon"></svg>
@@ -294,7 +302,7 @@
 
                         <!-- Column 2: Payment Section -->
                         <div class="col-lg-4">
-                          <div class="border rounded p-4 h-100 bg-white">
+                          <div class="border rounded p-4 h-100 themed-card">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                               <h6 class="mb-0 fs-5 text-dark">
                                 Paiements
@@ -341,8 +349,7 @@
                                 <small class="text-muted d-block mb-3 fw-semibold">Historique de payment</small>
                                 <div class="d-flex flex-column gap-2" style="max-height: 280px; overflow-y: auto;">
                                   <div *ngFor="let installment of file.payment.installments" 
-                                       class="p-3 border rounded shadow-sm border-2 border-primary" 
-                                       style="background-color: #ffffff; border-color: #0d6efd !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    class="p-3 border rounded shadow-sm border-2 payment-installment themed-surface">
                                     <div class="d-flex justify-content-between align-items-center">
                                       <div class="d-flex flex-column">
                                         <span class="fw-semibold mb-2 text-primary">Paiement {{ installment.installmentNumber }}</span>
@@ -359,7 +366,8 @@
                                           color="success" 
                                           size="sm" 
                                           (click)="validateInstallment(installment.id, file)"
-                                          [disabled]="loading">
+                                          [disabled]="loading"
+                                          class="force-white-text">
                                           <c-spinner *ngIf="loading" size="sm" class="me-1"></c-spinner>
                                           Valider
                                         </button>
@@ -379,7 +387,7 @@
 
                         <!-- Column 3: Exams Section -->
                         <div class="col-lg-4">
-                          <div class="border rounded p-4 h-100 bg-white">
+                          <div class="border rounded p-4 h-100 themed-card">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                               <h6 class="mb-0 fs-5 text-dark">
                                 Examens
@@ -399,7 +407,7 @@
                             <div *ngIf="!isApplicationFileEligibleForExams(file)" class="alert alert-warning p-2 mb-3">
                               <small><strong>Prérequis manquants :</strong></small>
                               <ul class="mb-0 mt-1 small">
-                                <li *ngFor="let prerequisite of getFilteredExamPrerequisites(file)">
+                                <li *ngFor="let prerequisite of getFilteredExamPrerequisites(file)" class="text-muted">
                                   {{ prerequisite }}
                                 </li>
                               </ul>
