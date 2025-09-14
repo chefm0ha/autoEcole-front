@@ -1,77 +1,165 @@
-<app-widgets-dropdown />
-<br><br><br>
-<c-row>
-  <c-col xs>
-    <c-card class="mb-4">
-      <c-card-body>
-        <table
-          [hover]="true"
-          [responsive]="true"
-          [striped]="true"
-          align="middle"
-          cTable
-          class="mb-0 border"
-        >
-          <thead class="text-nowrap text-truncate">
-          <tr>
-            <th class="bg-body-tertiary text-center ">
-              <svg cIcon name="cilPeople"></svg>
-            </th>
-            <th class="bg-body-tertiary">User</th>
-            <th class="bg-body-tertiary text-center">Country</th>
-            <th class="bg-body-tertiary">Usage</th>
-            <th class="bg-body-tertiary text-center">Payment Method</th>
-            <th class="bg-body-tertiary">Activity</th>
-          </tr>
-          </thead>
-          <tbody>
-            @for (user of users; track user.name; let i = $index) {
-              <tr>
-                <td class="text-center">
-                  <c-avatar [size]="'md'" src="{{ user.avatar }}" status="{{ user.status }}" />
-                </td>
-                <td>
-                  <div>{{ user.name }}</div>
-                  <div class="small text-body-secondary text-nowrap">
-                  <span>
-                    {{ user.state }} | Registered: {{ user.registered }}
-                  </span>
-                  </div>
-                </td>
-                <td class="text-center">
-                  <svg
-                    cIcon
-                    id="{{ user.country + user.name }}"
-                    name="cif{{ user.country }}"
-                    size="xl"
-                    title="{{ user.country }}"
-                  ></svg>
-                </td>
-                <td>
-                  <div class="d-flex justify-content-between">
-                    <div class="float-start">
-                      <strong>{{ user.usage }}%</strong>
-                    </div>
-                    <div class="float-end ms-1 text-nowrap">
-                      <small class="text-body-secondary">
-                        {{ user.period }}
-                      </small>
-                    </div>
-                  </div>
-                  <c-progress thin [value]="user.usage" color="{{ user.color }}" aria-label="Usage" />
-                </td>
-                <td class="text-center">
-                  <svg cIcon name="cibCc{{ user.payment }}" size="xl"></svg>
-                </td>
-                <td>
-                  <div class="small text-body-secondary">Last login</div>
-                  <div class="fw-semibold text-nowrap">{{ user.activity }}</div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+<!-- Dashboa            <div class="text-end">
+              <svg cIcon name="cilFile" size="2xl"></svg>
+            </div>Container with Padding -->
+<div class="dashboard-container">
+  <!-- Exam Statistics Cards with Charts -->
+  <c-row class="mb-4">
+    <c-col [xs]="12" [sm]="6" [lg]="3">
+      <c-card class="text-white bg-primary h-100">
+        <c-card-body class="pb-2">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fs-4 fw-semibold">{{ examStatistics.totalScheduledThisWeek }}</div>
+              <div>Examens cette semaine</div>
+            </div>
+            <div class="text-end">
+              <svg cIcon name="cilCalendar" size="2xl"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+    <c-col [xs]="12" [sm]="6" [lg]="3">
+      <c-card class="text-white bg-success h-100">
+        <c-card-body class="pb-2">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fs-4 fw-semibold">{{ (examStatistics.successRateThisMonth || 0) | number:'1.1-1' }}%</div>
+              <div>Taux de réussite</div>
+            </div>
+            <div class="text-end">
+              <svg cIcon name="cilChart" size="2xl"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+  <c-col [xs]="12" [sm]="6" [lg]="3">
+    <c-card class="text-white bg-info h-100">
+      <c-card-body class="pb-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fs-4 fw-semibold">{{ upcomingExams.length }}</div>
+            <div>Examens à venir</div>
+          </div>
+          <div class="text-end">
+            <svg cIcon name="cilClock" size="2xl"></svg>
+          </div>
+        </div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+  <c-col [xs]="12" [sm]="6" [lg]="3">
+    <c-card class="text-white bg-warning h-100">
+      <c-card-body class="pb-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fs-4 fw-semibold">{{ examStatistics.totalExamsThisMonth }}</div>
+            <div>Total ce mois</div>
+          </div>
+          <div class="text-end">
+            <svg cIcon name="cilFile" size="2xl"></svg>
+          </div>
+        </div>
       </c-card-body>
     </c-card>
   </c-col>
 </c-row>
+
+<!-- Upcoming Exams Table -->
+<c-row>
+  <c-col xs>
+    <c-card class="mb-4">
+      <c-card-body>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">
+            <svg cIcon name="cilClock" class="me-2"></svg>
+            Examens à venir
+          </h5>
+          <c-badge color="primary" class="fs-6">{{ upcomingExams.length }} examens</c-badge>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading" class="text-center p-4">
+          <c-spinner aria-hidden="true"></c-spinner>
+          <p class="mt-2 text-muted">Chargement des examens...</p>
+        </div>
+
+        <!-- Error -->
+        <c-alert *ngIf="error && !loading" color="danger" [dismissible]="true">
+          <svg cIcon name="cilWarning" class="me-2"></svg>
+          {{ error }}
+        </c-alert>
+
+        <!-- Exams Table -->
+        <div *ngIf="!loading && upcomingExams.length > 0" class="table-container">
+          <div class="table-responsive">
+            <table 
+              cTable 
+              [hover]="true" 
+              [striped]="true" 
+              class="mb-0 responsive-table" 
+              aria-label="Liste des examens à venir">
+              <thead>
+                <tr>
+                  <th scope="col" style="min-width: 150px;">
+                    <svg cIcon name="cilUser" class="me-2"></svg>
+                    Candidat
+                  </th>
+                  <th scope="col" style="min-width: 120px;">CIN</th>
+                  <th scope="col" style="min-width: 100px;">Type</th>
+                  <th scope="col" style="min-width: 100px;">Date</th>
+                  <th scope="col" style="min-width: 80px;">Tentative</th>
+                  <th scope="col" style="min-width: 150px;">Immatriculation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let exam of upcomingExams; let i = index; trackBy: trackByExamId" 
+                    class="exam-row clickable-row"
+                    (click)="navigateToExamDetails(exam)"
+                    style="cursor: pointer;">
+                  <td class="fw-semibold">
+                    <div class="fw-semibold">
+                      {{ (exam.candidateFirstName && exam.candidateFirstName !== 'N/A' ? exam.candidateFirstName : '') }} 
+                      {{ (exam.candidateLastName && exam.candidateLastName !== 'N/A' ? exam.candidateLastName : '') || 'Nom non disponible' }}
+                    </div>
+                  </td>
+                  <td>
+                    {{ (exam.candidateCin && exam.candidateCin !== 'N/A' ? exam.candidateCin : 'Non disponible') }}
+                  </td>
+                  <td>
+                    <c-badge 
+                      [color]="exam.examType === 'THEORY' ? 'info' : 'warning'"
+                      class="me-1">
+                      {{ getExamTypeLabel(exam.examType) }}
+                    </c-badge>
+                  </td>
+                  <td>
+                    <div class="fw-semibold">{{ formatDate(exam.date) }}</div>
+                  </td>
+                  <td>
+                    <c-badge color="secondary">
+                      {{ exam.attemptNumber }}{{ exam.attemptNumber === 1 ? 'ère' : 'ème' }}
+                    </c-badge>
+                  </td>
+                  <td>
+                    <span *ngIf="exam.immatriculation && exam.immatriculation !== 'N/A'" class="fw-semibold">{{ exam.immatriculation }}</span>
+                    <span *ngIf="!exam.immatriculation || exam.immatriculation === 'N/A'" class="text-muted">-</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- No Results -->
+        <div *ngIf="!loading && upcomingExams.length === 0 && !error" class="text-center p-5">
+          <svg cIcon name="cilCalendarCheck" size="3xl" class="text-muted mb-3"></svg>
+          <h5 class="text-muted">Aucun examen programmé</h5>
+          <p class="text-muted">Il n'y a actuellement aucun examen programmé dans les prochains jours.</p>
+        </div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+</div> <!-- End Dashboard Container -->

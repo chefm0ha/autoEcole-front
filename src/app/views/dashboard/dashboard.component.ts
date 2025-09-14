@@ -1,22 +1,25 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, effect, inject, OnInit, Renderer2, signal, WritableSignal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ChartOptions } from 'chart.js';
 import {
-  AvatarComponent,
   CardBodyComponent,
   CardComponent,
   ColComponent,
-  ProgressBarDirective,
-  ProgressComponent,
   RowComponent,
   TableDirective,
-  TextColorDirective
+  TextColorDirective,
+  BadgeComponent,
+  SpinnerComponent,
+  AlertComponent
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
 
-import { WidgetsDropdownComponent } from '../widgets/widgets-dropdown/widgets-dropdown.component';
 import { DashboardChartsData, IChartProps } from './dashboard-charts-data';
+import { ExamService } from '../../services/exam.service';
+import { DashboardExamDTO, ExamStatistics } from '../../models/exam.model';
+import { CommonModule } from '@angular/common';
 
 interface IUser {
   name: string;
@@ -35,7 +38,20 @@ interface IUser {
 @Component({
     templateUrl: 'dashboard.component.html',
     styleUrls: ['dashboard.component.scss'],
-    imports: [WidgetsDropdownComponent, TextColorDirective, CardComponent, CardBodyComponent, RowComponent, ColComponent, IconDirective, ReactiveFormsModule, ProgressBarDirective, ProgressComponent,  TableDirective, AvatarComponent]
+    imports: [
+      CommonModule,
+      TextColorDirective, 
+      CardComponent, 
+      CardBodyComponent, 
+      RowComponent, 
+      ColComponent, 
+      IconDirective, 
+      ReactiveFormsModule, 
+      TableDirective, 
+      BadgeComponent,
+      SpinnerComponent,
+      AlertComponent
+    ]
 })
 export class DashboardComponent implements OnInit {
 
@@ -43,87 +59,27 @@ export class DashboardComponent implements OnInit {
   readonly #document: Document = inject(DOCUMENT);
   readonly #renderer: Renderer2 = inject(Renderer2);
   readonly #chartsData: DashboardChartsData = inject(DashboardChartsData);
+  readonly #examService: ExamService = inject(ExamService);
+  readonly #router: Router = inject(Router);
 
-  public users: IUser[] = [
-    {
-      name: 'Yiorgos Avraamu',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'Us',
-      usage: 50,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Mastercard',
-      activity: '10 sec ago',
-      avatar: './assets/images/avatars/1.jpg',
-      status: 'success',
-      color: 'success'
-    },
-    {
-      name: 'Avram Tarasios',
-      state: 'Recurring ',
-      registered: 'Jan 1, 2021',
-      country: 'Br',
-      usage: 10,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Visa',
-      activity: '5 minutes ago',
-      avatar: './assets/images/avatars/2.jpg',
-      status: 'danger',
-      color: 'info'
-    },
-    {
-      name: 'Quintin Ed',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'In',
-      usage: 74,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Stripe',
-      activity: '1 hour ago',
-      avatar: './assets/images/avatars/3.jpg',
-      status: 'warning',
-      color: 'warning'
-    },
-    {
-      name: 'Enéas Kwadwo',
-      state: 'Sleep',
-      registered: 'Jan 1, 2021',
-      country: 'Fr',
-      usage: 98,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Paypal',
-      activity: 'Last month',
-      avatar: './assets/images/avatars/4.jpg',
-      status: 'secondary',
-      color: 'danger'
-    },
-    {
-      name: 'Agapetus Tadeáš',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'Es',
-      usage: 22,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'ApplePay',
-      activity: 'Last week',
-      avatar: './assets/images/avatars/5.jpg',
-      status: 'success',
-      color: 'primary'
-    },
-    {
-      name: 'Friderik Dávid',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'Pl',
-      usage: 43,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Amex',
-      activity: 'Yesterday',
-      avatar: './assets/images/avatars/6.jpg',
-      status: 'info',
-      color: 'dark'
-    }
-  ];
+  // Exam data for dashboard
+  public upcomingExams: DashboardExamDTO[] = [];
+  public examStatistics: ExamStatistics = {
+    totalScheduledThisWeek: 0,
+    successRateThisMonth: 0,
+    totalExamsThisMonth: 0,
+    upcomingExams: []
+  };
+  public loading = false;
+  public error = '';
+
+  // Chart data
+  public examTrendsChart: any = {};
+  public successRateChart: any = {};
+  public examTypeChart: any = {};
+  public monthlyExamsChart: any = {};
+
+  public users: IUser[] = [];
 
   public mainChart: IChartProps = { type: 'line' };
   public mainChartRef: WritableSignal<any> = signal(undefined);
@@ -140,6 +96,283 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.initCharts();
     this.updateChartOnColorModeChange();
+    this.loadDashboardData();
+    this.initializeChartData();
+  }
+
+  initializeChartData(): void {
+    // Success Rate Chart (Doughnut)
+    this.successRateChart = {
+      type: 'doughnut',
+      data: {
+        labels: ['Réussi', 'Échoué'],
+        datasets: [{
+          data: [0, 0],
+          backgroundColor: ['#20c997', '#dc3545'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    };
+
+    // Exam Type Chart (Bar)
+    this.examTypeChart = {
+      type: 'bar',
+      data: {
+        labels: ['Théorique', 'Pratique'],
+        datasets: [{
+          label: 'Nombre d\'examens',
+          data: [0, 0],
+          backgroundColor: ['#0d6efd', '#fd7e14'],
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    };
+
+    // Monthly Exams Trend (Line)
+    this.monthlyExamsChart = {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+        datasets: [{
+          label: 'Examens programmés',
+          data: new Array(12).fill(0),
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13, 110, 253, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    };
+
+    // Exam Trends Chart (Line with multiple datasets)
+    this.examTrendsChart = {
+      type: 'line',
+      data: {
+        labels: ['Semaine 1', 'Semaine 2', 'Semaine 3', 'Semaine 4'],
+        datasets: [{
+          label: 'Examens réussis',
+          data: [0, 0, 0, 0],
+          borderColor: '#20c997',
+          backgroundColor: 'rgba(32, 201, 151, 0.1)',
+          tension: 0.4
+        }, {
+          label: 'Examens échoués',
+          data: [0, 0, 0, 0],
+          borderColor: '#dc3545',
+          backgroundColor: 'rgba(220, 53, 69, 0.1)',
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    };
+  }
+
+  loadDashboardData(): void {
+    this.loading = true;
+    this.error = '';
+    
+    // Load upcoming exams
+    this.#examService.getComingExams().subscribe({
+      next: (exams) => {
+        console.log('Raw exam data from API:', exams);
+        this.upcomingExams = this.processExamData(exams);
+        this.examStatistics.upcomingExams = this.upcomingExams;
+        this.updateChartData(exams);
+        this.loading = false;
+      },
+      error: (error) => {
+        this.error = error;
+        this.loading = false;
+      }
+    });
+    
+    // Load statistics
+    this.#examService.getScheduledExamsThisWeekCount().subscribe({
+      next: (count) => {
+        this.examStatistics.totalScheduledThisWeek = typeof count === 'number' ? count : parseInt(count) || 0;
+      },
+      error: (error) => {
+        console.error('Error loading weekly exams count:', error);
+        this.examStatistics.totalScheduledThisWeek = 0;
+      }
+    });
+    
+    this.#examService.getSuccessRateCurrentMonth().subscribe({
+      next: (rate) => {
+        // Ensure the rate is a number
+        this.examStatistics.successRateThisMonth = typeof rate === 'number' ? rate : parseFloat(rate) || 0;
+        this.updateSuccessRateChart(this.examStatistics.successRateThisMonth);
+      },
+      error: (error) => {
+        console.error('Error loading success rate:', error);
+        this.examStatistics.successRateThisMonth = 0;
+      }
+    });
+
+    // Load current month exams for additional chart data
+    const currentDate = new Date();
+    this.#examService.getExamsByMonth(currentDate.getFullYear(), currentDate.getMonth() + 1).subscribe({
+      next: (monthlyExams) => {
+        this.examStatistics.totalExamsThisMonth = monthlyExams.length;
+        this.updateExamTypeChart(monthlyExams);
+      },
+      error: (error) => {
+        console.error('Error loading monthly exams:', error);
+      }
+    });
+  }
+
+  updateChartData(exams: any[]): void {
+    // Update exam type chart
+    const theoryCount = exams.filter(exam => exam.examType === 'THEORY').length;
+    const practicalCount = exams.filter(exam => exam.examType === 'PRACTICAL').length;
+    
+    this.examTypeChart.data.datasets[0].data = [theoryCount, practicalCount];
+  }
+
+  updateSuccessRateChart(successRate: number): void {
+    const failureRate = 100 - successRate;
+    this.successRateChart.data.datasets[0].data = [successRate, failureRate];
+  }
+
+  updateExamTypeChart(monthlyExams: any[]): void {
+    const theoryCount = monthlyExams.filter(exam => exam.examType === 'THEORY').length;
+    const practicalCount = monthlyExams.filter(exam => exam.examType === 'PRACTICAL').length;
+    
+    this.examTypeChart.data.datasets[0].data = [theoryCount, practicalCount];
+  }
+  
+  processExamData(exams: any[]): DashboardExamDTO[] {
+    return exams.map(exam => {
+      const examDate = new Date(exam.date);
+      const now = new Date();
+      const timeDiff = examDate.getTime() - now.getTime();
+      const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      let timeRemaining = '';
+      if (daysRemaining === 0) {
+        timeRemaining = "Aujourd'hui";
+      } else if (daysRemaining === 1) {
+        timeRemaining = "Demain";
+      } else if (daysRemaining > 1) {
+        timeRemaining = `Dans ${daysRemaining} jours`;
+      } else {
+        timeRemaining = "Passé";
+      }
+      
+      const dayOfWeek = examDate.toLocaleDateString('fr-FR', { weekday: 'long' });
+      
+      // Log the exam data to debug
+      console.log('Individual exam data:', JSON.stringify(exam, null, 2));
+      console.log('Available fields:', Object.keys(exam));
+      
+      return {
+        ...exam,
+        timeRemaining,
+        dayOfWeek,
+        // Handle different possible field names from backend
+        candidateFirstName: exam.candidateFirstName || exam.firstName || exam.prenom || 'N/A',
+        candidateLastName: exam.candidateLastName || exam.lastName || exam.nom || 'N/A',
+        candidateCin: exam.candidateCin || exam.cin || exam.candidateId || 'N/A',
+        // Ensure immatriculation is properly handled
+        immatriculation: exam.immatriculation || exam.vehicleRegistration || exam.registration || null
+      };
+    });
+  }
+  
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR');
+  }
+  
+  formatTime(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  getExamTypeLabel(type: string): string {
+    return type === 'THEORY' ? 'Théorique' : 'Pratique';
+  }
+  
+  getStatusBadgeColor(status: string): string {
+    switch (status) {
+      case 'SCHEDULED': return 'primary';
+      case 'PASSED': return 'success';
+      case 'FAILED': return 'danger';
+      default: return 'secondary';
+    }
+  }
+  
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'SCHEDULED': return 'Programmé';
+      case 'PASSED': return 'Réussi';
+      case 'FAILED': return 'Échoué';
+      default: return status;
+    }
+  }
+  
+  trackByExamId(index: number, exam: DashboardExamDTO): number {
+    return exam.id;
+  }
+  
+  getTimeRemainingClass(timeRemaining: string | undefined): string {
+    if (!timeRemaining) return '';
+    if (timeRemaining === "Aujourd'hui") return 'text-success';
+    if (timeRemaining === 'Demain') return 'text-warning';
+    if (timeRemaining.includes('Dans')) return 'text-info';
+    if (timeRemaining === 'Passé') return 'text-muted';
+    return '';
   }
 
   initCharts(): void {
@@ -166,6 +399,17 @@ export class DashboardComponent implements OnInit {
     this.#destroyRef.onDestroy(() => {
       unListen();
     });
+  }
+
+  navigateToExamDetails(exam: DashboardExamDTO): void {
+    // Navigate to candidate details page with the application file ID
+    // You might need to adjust this route based on your routing setup
+    if (exam.applicationFileId) {
+      this.#router.navigate(['/candidates/details', exam.applicationFileId]);
+    } else {
+      // Fallback: try to navigate using exam ID if application file ID is not available
+      this.#router.navigate(['/exams/details', exam.id]);
+    }
   }
 
   setChartStyles() {
