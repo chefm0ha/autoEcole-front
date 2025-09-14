@@ -18,6 +18,7 @@ import { IconDirective } from '@coreui/icons-angular';
 
 import { DashboardChartsData, IChartProps } from './dashboard-charts-data';
 import { ExamService } from '../../services/exam.service';
+import { CandidateService } from '../../services/candidate.service';
 import { DashboardExamDTO, ExamStatistics } from '../../models/exam.model';
 import { CommonModule } from '@angular/common';
 
@@ -60,6 +61,7 @@ export class DashboardComponent implements OnInit {
   readonly #renderer: Renderer2 = inject(Renderer2);
   readonly #chartsData: DashboardChartsData = inject(DashboardChartsData);
   readonly #examService: ExamService = inject(ExamService);
+  readonly #candidateService: CandidateService = inject(CandidateService);
   readonly #router: Router = inject(Router);
 
   // Exam data for dashboard
@@ -68,6 +70,7 @@ export class DashboardComponent implements OnInit {
     totalScheduledThisWeek: 0,
     successRateThisMonth: 0,
     totalExamsThisMonth: 0,
+    activeCandidatesCount: 0,
     upcomingExams: []
   };
   public loading = false;
@@ -259,15 +262,14 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // Load current month exams for additional chart data
-    const currentDate = new Date();
-    this.#examService.getExamsByMonth(currentDate.getFullYear(), currentDate.getMonth() + 1).subscribe({
-      next: (monthlyExams) => {
-        this.examStatistics.totalExamsThisMonth = monthlyExams.length;
-        this.updateExamTypeChart(monthlyExams);
+    // Load active candidates count
+    this.#candidateService.getActiveCandidatesCount().subscribe({
+      next: (count) => {
+        this.examStatistics.activeCandidatesCount = typeof count === 'number' ? count : parseInt(count) || 0;
       },
       error: (error) => {
-        console.error('Error loading monthly exams:', error);
+        console.error('Error loading active candidates count:', error);
+        this.examStatistics.activeCandidatesCount = 0;
       }
     });
   }

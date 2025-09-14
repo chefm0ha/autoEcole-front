@@ -151,6 +151,13 @@ export class CandidateService {
     return gsmRegex.test(gsm);
   }
 
+  // Get count of active candidates
+  getActiveCandidatesCount(): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/activeCandidatesNumber`, {
+      withCredentials: true
+    }).pipe(catchError(this.handleError));
+  }
+
   // Error handling
   private handleError(error: any): Observable<never> {
     console.error('An error occurred:', error);

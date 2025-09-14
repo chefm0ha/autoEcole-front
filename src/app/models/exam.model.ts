@@ -41,5 +41,6 @@ export interface ExamStatistics {
   totalScheduledThisWeek: number;
   successRateThisMonth: number;
   totalExamsThisMonth: number;
+  activeCandidatesCount: number;
   upcomingExams: DashboardExamDTO[];
 }
