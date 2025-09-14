@@ -227,7 +227,6 @@ export class DashboardComponent implements OnInit {
     // Load upcoming exams
     this.#examService.getComingExams().subscribe({
       next: (exams) => {
-        console.log('Raw exam data from API:', exams);
         this.upcomingExams = this.processExamData(exams);
         this.examStatistics.upcomingExams = this.upcomingExams;
         this.updateChartData(exams);
@@ -314,20 +313,16 @@ export class DashboardComponent implements OnInit {
       
       const dayOfWeek = examDate.toLocaleDateString('fr-FR', { weekday: 'long' });
       
-      // Log the exam data to debug
-      console.log('Individual exam data:', JSON.stringify(exam, null, 2));
-      console.log('Available fields:', Object.keys(exam));
-      
       return {
         ...exam,
         timeRemaining,
         dayOfWeek,
-        // Handle different possible field names from backend
-        candidateFirstName: exam.candidateFirstName || exam.firstName || exam.prenom || 'N/A',
-        candidateLastName: exam.candidateLastName || exam.lastName || exam.nom || 'N/A',
-        candidateCin: exam.candidateCin || exam.cin || exam.candidateId || 'N/A',
-        // Ensure immatriculation is properly handled
-        immatriculation: exam.immatriculation || exam.vehicleRegistration || exam.registration || null
+        // Map the correct field names from the API response
+        candidateFirstName: exam.candidateFullName ? exam.candidateFullName.split(' ')[0] : 'N/A',
+        candidateLastName: exam.candidateFullName ? exam.candidateFullName.split(' ').slice(1).join(' ') : 'N/A',
+        candidateCin: exam.candidateCin || 'N/A',
+        // Use the correct immatriculation field name
+        immatriculation: exam.vehicleImmatriculation || null
       };
     });
   }
@@ -404,13 +399,12 @@ export class DashboardComponent implements OnInit {
   }
 
   navigateToExamDetails(exam: DashboardExamDTO): void {
-    // Navigate to candidate details page with the application file ID
-    // You might need to adjust this route based on your routing setup
-    if (exam.applicationFileId) {
-      this.#router.navigate(['/candidates/details', exam.applicationFileId]);
+    // Navigate to candidate details page using the CIN
+    if (exam.candidateCin && exam.candidateCin !== 'N/A') {
+      this.#router.navigate(['/app/candidates', exam.candidateCin]);
     } else {
-      // Fallback: try to navigate using exam ID if application file ID is not available
-      this.#router.navigate(['/exams/details', exam.id]);
+      // Fallback to candidates management page if no CIN available
+      this.#router.navigate(['/app/candidates']);
     }
   }
 

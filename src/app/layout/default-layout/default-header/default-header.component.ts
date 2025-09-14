@@ -5,7 +5,6 @@ import { Router, RouterLink } from '@angular/router';
 import {
   AvatarComponent,
   BadgeComponent,
-  BreadcrumbRouterComponent,
   ColorModeService,
   ContainerComponent,
   DropdownComponent,
@@ -36,7 +35,6 @@ import { AuthService, User } from '../../../auth/auth.service';
     NavLinkDirective, 
     RouterLink, 
     NgTemplateOutlet, 
-    BreadcrumbRouterComponent, 
     DropdownComponent, 
     DropdownToggleDirective, 
     AvatarComponent, 
