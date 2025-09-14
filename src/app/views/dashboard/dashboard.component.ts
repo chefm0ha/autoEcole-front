@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, DestroyRef, effect, inject, OnInit, Renderer2, signal, WritableSignal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, OnDestroy, Renderer2, signal, WritableSignal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChartOptions } from 'chart.js';
@@ -54,7 +54,7 @@ interface IUser {
       AlertComponent
     ]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
 
   readonly #destroyRef: DestroyRef = inject(DestroyRef);
   readonly #document: Document = inject(DOCUMENT);
@@ -75,6 +75,10 @@ export class DashboardComponent implements OnInit {
   };
   public loading = false;
   public error = '';
+
+  // Refresh & chart optimization helpers
+  private statisticsIntervalId: any;
+  private lastSuccessRateRendered: number | null = null;
 
   // Chart data
   public examTrendsChart: any = {};
@@ -101,6 +105,14 @@ export class DashboardComponent implements OnInit {
     this.updateChartOnColorModeChange();
     this.loadDashboardData();
     this.initializeChartData();
+    // Auto refresh statistics every 60 seconds
+    this.statisticsIntervalId = setInterval(() => this.refreshStatistics(), 60000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.statisticsIntervalId) {
+      clearInterval(this.statisticsIntervalId);
+    }
   }
 
   initializeChartData(): void {
@@ -227,9 +239,16 @@ export class DashboardComponent implements OnInit {
     // Load upcoming exams
     this.#examService.getComingExams().subscribe({
       next: (exams) => {
-        this.upcomingExams = this.processExamData(exams);
+        const now = new Date();
+        // Keep only future or today exams that are still scheduled
+        const filtered = (exams || []).filter(e => {
+          if (!e) { return false; }
+            const d = new Date(e.date);
+            return e.status === 'SCHEDULED' && d.getTime() >= new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        });
+        this.upcomingExams = this.processExamData(filtered);
         this.examStatistics.upcomingExams = this.upcomingExams;
-        this.updateChartData(exams);
+        this.updateChartData(filtered);
         this.loading = false;
       },
       error: (error) => {
@@ -238,38 +257,51 @@ export class DashboardComponent implements OnInit {
       }
     });
     
-    // Load statistics
+    // Load statistics (separate for reuse/refresh)
+    this.refreshStatistics();
+  }
+
+  private refreshStatistics(): void {
+    // Weekly scheduled exams count
     this.#examService.getScheduledExamsThisWeekCount().subscribe({
-      next: (count) => {
-        this.examStatistics.totalScheduledThisWeek = typeof count === 'number' ? count : parseInt(count) || 0;
-      },
-      error: (error) => {
-        console.error('Error loading weekly exams count:', error);
-        this.examStatistics.totalScheduledThisWeek = 0;
-      }
+      next: (count) => this.examStatistics.totalScheduledThisWeek = typeof count === 'number' ? count : parseInt(count) || 0,
+      error: () => this.examStatistics.totalScheduledThisWeek = 0
     });
-    
+
+    // Success rate
     this.#examService.getSuccessRateCurrentMonth().subscribe({
-      next: (rate) => {
-        // Ensure the rate is a number
-        this.examStatistics.successRateThisMonth = typeof rate === 'number' ? rate : parseFloat(rate) || 0;
-        this.updateSuccessRateChart(this.examStatistics.successRateThisMonth);
+      next: (rate: any) => {
+        let parsed = 0;
+        if (typeof rate === 'number') {
+          parsed = rate;
+        } else if (rate && typeof rate === 'object') {
+          // Try common property names
+            if (typeof rate.successRate === 'number') parsed = rate.successRate;
+            else if (typeof rate.rate === 'number') parsed = rate.rate;
+            else if (typeof rate.percentage === 'number') parsed = rate.percentage;
+            else if (typeof rate.value === 'number') parsed = rate.value;
+            else {
+              // Fallback: attempt to parse first numeric value in object
+              const firstNumeric = Object.values(rate).find(v => typeof v === 'number');
+              if (typeof firstNumeric === 'number') parsed = firstNumeric;
+            }
+        } else if (typeof rate === 'string') {
+          const numeric = parseFloat(rate);
+          parsed = isNaN(numeric) ? 0 : numeric;
+        }
+        this.examStatistics.successRateThisMonth = parsed;
+        this.updateSuccessRateChart(parsed);
       },
-      error: (error) => {
-        console.error('Error loading success rate:', error);
+      error: () => {
         this.examStatistics.successRateThisMonth = 0;
+        this.updateSuccessRateChart(0);
       }
     });
 
-    // Load active candidates count
+    // Active candidates count
     this.#candidateService.getActiveCandidatesCount().subscribe({
-      next: (count) => {
-        this.examStatistics.activeCandidatesCount = typeof count === 'number' ? count : parseInt(count) || 0;
-      },
-      error: (error) => {
-        console.error('Error loading active candidates count:', error);
-        this.examStatistics.activeCandidatesCount = 0;
-      }
+      next: (count) => this.examStatistics.activeCandidatesCount = typeof count === 'number' ? count : parseInt(count) || 0,
+      error: () => this.examStatistics.activeCandidatesCount = 0
     });
   }
 
@@ -282,6 +314,11 @@ export class DashboardComponent implements OnInit {
   }
 
   updateSuccessRateChart(successRate: number): void {
+    // Avoid unnecessary updates if value hasn't changed
+    if (this.lastSuccessRateRendered === successRate) {
+      return;
+    }
+    this.lastSuccessRateRendered = successRate;
     const failureRate = 100 - successRate;
     this.successRateChart.data.datasets[0].data = [successRate, failureRate];
   }
